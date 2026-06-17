@@ -1,0 +1,86 @@
+interface ListRowProps {
+  name: string;
+  meta: string;
+  onOpen: () => void;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}
+
+const ICON_BTN =
+  'flex h-[34px] w-[34px] flex-none cursor-pointer items-center justify-center rounded-[9px] border border-[#2a2a2e] bg-transparent';
+
+/** A tappable card row used for routines and days. */
+export function ListRow({ name, meta, onOpen, onEdit, onDuplicate, onDelete }: ListRowProps) {
+  return (
+    <div
+      onClick={onOpen}
+      className="flex cursor-pointer items-center gap-2 rounded-2xl border border-[#26262b] bg-[#161618] p-4"
+    >
+      <div className="min-w-0 flex-1">
+        <div className="text-[16px] font-semibold text-[#f3f3f4]">{name}</div>
+        <div className="mt-1 text-[13px] text-[#82828a]">{meta}</div>
+      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit();
+        }}
+        className="flex-none cursor-pointer rounded-[9px] border border-[#2a2a2e] bg-transparent px-[11px] py-[7px] text-[12.5px] text-[#9a9aa1]"
+      >
+        Editar
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDuplicate();
+        }}
+        aria-label={`Duplicar ${name}`}
+        title="Duplicar"
+        className={ICON_BTN + ' text-[#9a9aa1]'}
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="9" y="9" width="11" height="11" rx="2" />
+          <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+        </svg>
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        aria-label={`Eliminar ${name}`}
+        title="Eliminar"
+        className={ICON_BTN + ' text-[#6a6a72] text-[15px]'}
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+/** Centered empty-state with a big plus (home screen). */
+export function EmptyHome({ text }: { text: string }) {
+  return (
+    <div className="px-6 py-[60px] text-center text-[#5f5f66]">
+      <div className="mb-3 text-[40px] text-[#2f2f35]">＋</div>
+      <div className="text-[14px] leading-relaxed">{text}</div>
+    </div>
+  );
+}
+
+/** Plain centered empty-state text (routine / day screens). */
+export function EmptyText({ text }: { text: string }) {
+  return (
+    <div className="px-6 py-12 text-center text-[14px] leading-relaxed text-[#5f5f66]">{text}</div>
+  );
+}

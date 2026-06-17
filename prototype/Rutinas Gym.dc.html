@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  html, body { height: 100%; margin: 0; background: #0d0d0f; }
+  * { box-sizing: border-box; }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  @keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</helmet>
+
+<div style="display:flex;flex-direction:column;height:100%;background:#0d0d0f;color:#f3f3f4;position:relative;overflow:hidden;font-family:'Helvetica Neue',Helvetica,system-ui,Arial,sans-serif;max-width:480px;margin:0 auto;">
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;gap:12px;padding:16px 16px 14px;background:#0d0d0f;border-bottom:1px solid #1f1f23;flex:none;">
+    <sc-if value="{{ showBack }}">
+      <button onClick="{{ onBack }}" style="width:38px;height:38px;border-radius:50%;border:1px solid #2a2a2e;background:#1a1a1d;color:#e6e6ea;font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;padding-bottom:3px;">‹</button>
+    </sc-if>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:21px;font-weight:700;color:#f3f3f4;letter-spacing:-0.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ title }}</div>
+    </div>
+    <button onClick="{{ onToggleUnit }}" style="padding:8px 13px;border-radius:20px;border:1px solid #2a2a2e;background:#1a1a1d;color:#cfcfd4;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer;flex:none;">{{ unit }}</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+
+    <!-- HOME -->
+    <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:16px 16px 8px;display:flex;flex-direction:column;gap:12px;">
+        <sc-for list="{{ routines }}" as="r" hint-placeholder-count="3">
+          <div onClick="{{ r.onOpen }}" style="background:#161618;border:1px solid #26262b;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:16px;font-weight:600;color:#f3f3f4;">{{ r.name }}</div>
+              <div style="font-size:13px;color:#82828a;margin-top:4px;">{{ r.meta }}</div>
+            </div>
+            <button onClick="{{ r.onEdit }}" style="padding:7px 11px;border-radius:9px;border:1px solid #2a2a2e;background:transparent;color:#9a9aa1;font-size:12.5px;cursor:pointer;flex:none;">Editar</button>
+            <button onClick="{{ r.onDelete }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #2a2a2e;background:transparent;color:#6a6a72;font-size:15px;cursor:pointer;flex:none;">✕</button>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noItems }}">
+          <div style="text-align:center;padding:60px 24px;color:#5f5f66;">
+            <div style="font-size:40px;margin-bottom:12px;color:#2f2f35;">＋</div>
+            <div style="font-size:14px;line-height:1.5;">{{ emptyText }}</div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ROUTINE (days) -->
+    <sc-if value="{{ isRoutine }}">
+      <div style="padding:16px 16px 8px;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.07em;color:#5f5f66;padding:0 2px 2px;">{{ subtitle }}</div>
+        <sc-for list="{{ days }}" as="d" hint-placeholder-count="3">
+          <div onClick="{{ d.onOpen }}" style="background:#161618;border:1px solid #26262b;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:16px;font-weight:600;color:#f3f3f4;">{{ d.name }}</div>
+              <div style="font-size:13px;color:#82828a;margin-top:4px;">{{ d.meta }}</div>
+            </div>
+            <button onClick="{{ d.onEdit }}" style="padding:7px 11px;border-radius:9px;border:1px solid #2a2a2e;background:transparent;color:#9a9aa1;font-size:12.5px;cursor:pointer;flex:none;">Editar</button>
+            <button onClick="{{ d.onDelete }}" style="width:34px;height:34px;border-radius:9px;border:1px solid #2a2a2e;background:transparent;color:#6a6a72;font-size:15px;cursor:pointer;flex:none;">✕</button>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noItems }}">
+          <div style="text-align:center;padding:48px 24px;color:#5f5f66;font-size:14px;line-height:1.5;">{{ emptyText }}</div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- DAY (exercises) -->
+    <sc-if value="{{ isDay }}">
+      <div style="padding:16px 16px 8px;display:flex;flex-direction:column;gap:14px;">
+        <sc-for list="{{ exercises }}" as="ex" hint-placeholder-count="3">
+          <div style="background:#161618;border:1px solid #26262b;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px;">
+
+            <div style="display:flex;align-items:flex-start;gap:10px;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:16px;font-weight:600;color:#f3f3f4;">{{ ex.name }}</div>
+                <div style="font-size:12.5px;color:#82828a;margin-top:4px;">{{ ex.sub }}</div>
+              </div>
+              <sc-if value="{{ ex.hasVideo }}">
+                <button onClick="{{ ex.onVideo }}" title="Ver guía" style="width:37px;height:37px;border-radius:10px;border:1px solid #2a2a2e;background:#1a1a1d;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+                  <svg width="13" height="13" viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11" fill="#3d9bff"></polygon></svg>
+                </button>
+              </sc-if>
+              <button onClick="{{ ex.onTimer }}" title="Iniciar descanso" style="width:37px;height:37px;border-radius:10px;border:1px solid #2a2a2e;background:#1a1a1d;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cfcfd4" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"></circle><line x1="12" y1="13" x2="12" y2="8.5"></line><line x1="12" y1="13" x2="15" y2="14.5"></line><line x1="9.5" y1="2.5" x2="14.5" y2="2.5"></line></svg>
+              </button>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:10px;padding:0 2px;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:#5a5a61;">
+                <div style="width:44px;">Sem</div>
+                <div style="width:96px;">Carga</div>
+                <div style="flex:1;">Series hechas</div>
+              </div>
+              <sc-for list="{{ ex.weeks }}" as="w" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:44px;font-size:13px;font-weight:600;color:#b3b3ba;">{{ w.label }}</div>
+                  <div style="width:96px;display:flex;align-items:center;gap:5px;background:#0d0d0f;border:1px solid #2a2a2e;border-radius:10px;padding:7px 9px;">
+                    <input value="{{ w.weight }}" onChange="{{ w.onWeight }}" type="number" inputMode="decimal" style="width:100%;background:transparent;border:none;outline:none;color:#f3f3f4;font-size:14px;font-weight:600;padding:0;min-width:0;"/>
+                    <span style="font-size:10.5px;color:#5a5a61;font-weight:600;flex:none;">{{ unit }}</span>
+                  </div>
+                  <div style="flex:1;display:flex;flex-wrap:wrap;gap:6px;">
+                    <sc-for list="{{ w.sets }}" as="st" hint-placeholder-count="4">
+                      <sc-if value="{{ st.done }}">
+                        <button onClick="{{ st.onToggle }}" style="width:32px;height:32px;border-radius:9px;border:1px solid #3d9bff;background:#3d9bff;color:#06121f;font-size:13px;font-weight:700;cursor:pointer;flex:none;">{{ st.num }}</button>
+                      </sc-if>
+                      <sc-if value="{{ st.notDone }}">
+                        <button onClick="{{ st.onToggle }}" style="width:32px;height:32px;border-radius:9px;border:1px solid #313137;background:#0d0d0f;color:#6a6a72;font-size:13px;font-weight:600;cursor:pointer;flex:none;">{{ st.num }}</button>
+                      </sc-if>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex;gap:8px;border-top:1px solid #232327;padding-top:12px;">
+              <button onClick="{{ ex.onEdit }}" style="flex:1;padding:9px;border-radius:10px;border:1px solid #2a2a2e;background:transparent;color:#b3b3ba;font-size:13px;font-weight:500;cursor:pointer;">Editar</button>
+              <button onClick="{{ ex.onDelete }}" style="flex:1;padding:9px;border-radius:10px;border:1px solid #3a2422;background:transparent;color:#ff6b5e;font-size:13px;font-weight:500;cursor:pointer;">Eliminar</button>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noItems }}">
+          <div style="text-align:center;padding:48px 24px;color:#5f5f66;font-size:14px;line-height:1.5;">{{ emptyText }}</div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <!-- FAB FOOTER -->
+  <div style="padding:12px 16px 16px;background:linear-gradient(to top,#0d0d0f 65%,rgba(13,13,15,0));flex:none;">
+    <button onClick="{{ onAdd }}" style="width:100%;padding:15px;border-radius:14px;border:none;background:#3d9bff;color:#06121f;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.01em;">{{ addLabel }}</button>
+  </div>
+
+  <!-- MODAL -->
+  <sc-if value="{{ modalOpen }}">
+    <div onClick="{{ onMCancel }}" style="position:absolute;inset:0;z-index:20;background:rgba(0,0,0,0.62);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .18s ease;">
+      <div onClick="{{ stop }}" style="width:100%;max-width:480px;background:#161618;border-top-left-radius:24px;border-top-right-radius:24px;border:1px solid #2a2a2e;border-bottom:none;padding:14px 18px 24px;animation:sheetUp .24s cubic-bezier(.2,.8,.2,1);">
+        <div style="width:38px;height:4px;border-radius:3px;background:#2f2f35;margin:0 auto 16px;"></div>
+        <div style="font-size:18px;font-weight:700;color:#f3f3f4;margin-bottom:6px;">{{ modalTitle }}</div>
+
+        <label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:#5f5f66;margin:16px 0 6px;">Nombre</label>
+        <input value="{{ modal.name }}" onChange="{{ onMName }}" placeholder="Ej. Push · Pecho/Hombro" style="width:100%;background:#0d0d0f;border:1px solid #2a2a2e;border-radius:11px;padding:13px;color:#f3f3f4;font-size:15px;outline:none;font-family:inherit;"/>
+
+        <sc-if value="{{ modalIsExercise }}">
+          <label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:#5f5f66;margin:16px 0 6px;">Enlace de video (guía) · opcional</label>
+          <input value="{{ modal.videoUrl }}" onChange="{{ onMVideo }}" placeholder="https://youtube.com/... o tiktok.com/..." style="width:100%;background:#0d0d0f;border:1px solid #2a2a2e;border-radius:11px;padding:13px;color:#f3f3f4;font-size:14px;outline:none;font-family:inherit;"/>
+
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;">
+              <label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:#5f5f66;margin:16px 0 6px;">Series</label>
+              <input value="{{ modal.sets }}" onChange="{{ onMSets }}" type="number" inputMode="numeric" style="width:100%;background:#0d0d0f;border:1px solid #2a2a2e;border-radius:11px;padding:13px;color:#f3f3f4;font-size:15px;outline:none;font-family:inherit;"/>
+            </div>
+            <div style="flex:1;">
+              <label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:#5f5f66;margin:16px 0 6px;">Reps</label>
+              <input value="{{ modal.reps }}" onChange="{{ onMReps }}" placeholder="8-12" style="width:100%;background:#0d0d0f;border:1px solid #2a2a2e;border-radius:11px;padding:13px;color:#f3f3f4;font-size:15px;outline:none;font-family:inherit;"/>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <div style="flex:1;">
+              <label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:#5f5f66;margin:16px 0 6px;">Descanso (seg)</label>
+              <input value="{{ modal.rest }}" onChange="{{ onMRest }}" type="number" inputMode="numeric" style="width:100%;background:#0d0d0f;border:1px solid #2a2a2e;border-radius:11px;padding:13px;color:#f3f3f4;font-size:15px;outline:none;font-family:inherit;"/>
+            </div>
+            <div style="flex:1;">
+              <label style="display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:#5f5f66;margin:16px 0 6px;">Semanas</label>
+              <input value="{{ modal.weeks }}" onChange="{{ onMWeeks }}" type="number" inputMode="numeric" style="width:100%;background:#0d0d0f;border:1px solid #2a2a2e;border-radius:11px;padding:13px;color:#f3f3f4;font-size:15px;outline:none;font-family:inherit;"/>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;gap:10px;margin-top:22px;">
+          <button onClick="{{ onMCancel }}" style="flex:1;padding:14px;border-radius:12px;border:1px solid #2a2a2e;background:transparent;color:#b3b3ba;font-size:15px;font-weight:600;cursor:pointer;">Cancelar</button>
+          <button onClick="{{ onMSave }}" style="flex:1;padding:14px;border-radius:12px;border:none;background:#3d9bff;color:#06121f;font-size:15px;font-weight:700;cursor:pointer;">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- REST TIMER -->
+  <sc-if value="{{ timer }}">
+    <div onClick="{{ onTimerClose }}" style="position:absolute;inset:0;z-index:25;background:rgba(0,0,0,0.72);display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .18s ease;">
+      <div onClick="{{ stop }}" style="width:100%;max-width:480px;background:#161618;border-top-left-radius:24px;border-top-right-radius:24px;border:1px solid #2a2a2e;border-bottom:none;padding:14px 18px 26px;animation:sheetUp .24s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;align-items:center;">
+        <div style="width:38px;height:4px;border-radius:3px;background:#2f2f35;margin:0 auto 12px;"></div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.09em;color:#82828a;margin-bottom:4px;">Descanso</div>
+        <div style="font-size:14px;font-weight:600;color:#cfcfd4;margin-bottom:18px;text-align:center;max-width:90%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ timer.label }}</div>
+
+        <div style="position:relative;width:158px;height:158px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <svg width="158" height="158" viewBox="0 0 140 140" style="position:absolute;inset:0;transform:rotate(-90deg);">
+            <circle cx="70" cy="70" r="52" fill="none" stroke="#26262b" stroke-width="9"></circle>
+            <circle cx="70" cy="70" r="52" fill="none" stroke="#3d9bff" stroke-width="9" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="{{ timer.dash }}" style="transition:stroke-dashoffset .95s linear;"></circle>
+          </svg>
+          <div style="font-size:40px;font-weight:700;color:#f3f3f4;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;">{{ timer.mmss }}</div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:18px;">
+          <button onClick="{{ onPreset60 }}" style="padding:8px 16px;border-radius:20px;border:1px solid #2a2a2e;background:#1a1a1d;color:#cfcfd4;font-size:13px;font-weight:600;cursor:pointer;">60s</button>
+          <button onClick="{{ onPreset90 }}" style="padding:8px 16px;border-radius:20px;border:1px solid #2a2a2e;background:#1a1a1d;color:#cfcfd4;font-size:13px;font-weight:600;cursor:pointer;">90s</button>
+          <button onClick="{{ onPreset120 }}" style="padding:8px 16px;border-radius:20px;border:1px solid #2a2a2e;background:#1a1a1d;color:#cfcfd4;font-size:13px;font-weight:600;cursor:pointer;">120s</button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;width:100%;">
+          <button onClick="{{ onTimerSub }}" style="width:54px;height:54px;border-radius:14px;border:1px solid #2a2a2e;background:#1a1a1d;color:#cfcfd4;font-size:14px;font-weight:700;cursor:pointer;flex:none;">−15</button>
+          <button onClick="{{ onTimerToggle }}" style="flex:1;height:54px;border-radius:14px;border:none;background:#3d9bff;color:#06121f;font-size:16px;font-weight:700;cursor:pointer;">{{ timer.toggleLabel }}</button>
+          <button onClick="{{ onTimerAdd }}" style="width:54px;height:54px;border-radius:14px;border:1px solid #2a2a2e;background:#1a1a1d;color:#cfcfd4;font-size:14px;font-weight:700;cursor:pointer;flex:none;">+15</button>
+        </div>
+
+        <div style="display:flex;gap:24px;margin-top:16px;">
+          <button onClick="{{ onTimerReset }}" style="background:none;border:none;color:#82828a;font-size:13px;font-weight:500;cursor:pointer;">Reiniciar</button>
+          <button onClick="{{ onTimerClose }}" style="background:none;border:none;color:#82828a;font-size:13px;font-weight:500;cursor:pointer;">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:393,&quot;height&quot;:852}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'home',
+    routineId: null,
+    dayId: null,
+    unit: 'kg',
+    modal: null,
+    timer: null,
+    routines: []
+  };
+
+  componentDidMount() {
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem('gymApp_v1')); } catch (e) {}
+    if (data && data.routines && data.routines.length) {
+      this.setState({ routines: data.routines, unit: data.unit || 'kg' });
+    } else {
+      this.setState({ routines: this.seed() });
+    }
+  }
+  componentWillUnmount() { if (this._int) clearInterval(this._int); }
+
+  uid() { return 'id' + Math.random().toString(36).slice(2, 9); }
+
+  persist(routines, unit) {
+    try { localStorage.setItem('gymApp_v1', JSON.stringify({ routines: routines || this.state.routines, unit: unit || this.state.unit })); } catch (e) {}
+  }
+
+  seed() {
+    const mk = (name, sets, reps, rest, w0, step, q) => ({
+      id: this.uid(), name, sets, reps, restSeconds: rest,
+      videoUrl: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q),
+      weeks: [1, 2, 3, 4].map(n => ({ id: this.uid(), label: 'Sem ' + n, weight: +(w0 + step * (n - 1)).toFixed(1), doneSets: new Array(sets).fill(false) }))
+    });
+    return [{
+      id: this.uid(), name: 'Rutina Mes 1',
+      days: [
+        { id: this.uid(), name: 'Push · Pecho/Hombro/Tríceps', exercises: [
+          mk('Press de banca', 4, '8-10', 120, 60, 2.5, 'press de banca tecnica'),
+          mk('Press militar con barra', 4, '8-10', 120, 35, 2.5, 'press militar con barra'),
+          mk('Elevaciones laterales', 4, '12-15', 45, 8, 1, 'elevaciones laterales mancuerna'),
+          mk('Extensión de tríceps en polea', 3, '10-12', 60, 25, 2.5, 'extension triceps polea')
+        ] },
+        { id: this.uid(), name: 'Pull · Espalda/Bíceps', exercises: [
+          mk('Dominadas', 4, '6-10', 120, 0, 2.5, 'dominadas tecnica'),
+          mk('Remo con barra', 4, '8-10', 90, 50, 2.5, 'remo con barra'),
+          mk('Jalón al pecho', 3, '10-12', 75, 45, 2.5, 'jalon al pecho'),
+          mk('Curl de bíceps con barra', 3, '10-12', 60, 25, 2.5, 'curl de biceps con barra')
+        ] },
+        { id: this.uid(), name: 'Legs · Piernas', exercises: [
+          mk('Sentadilla', 4, '6-8', 150, 70, 5, 'sentadilla tecnica'),
+          mk('Prensa de pierna', 4, '10-12', 90, 120, 10, 'prensa de pierna'),
+          mk('Peso muerto rumano', 3, '8-10', 120, 60, 5, 'peso muerto rumano'),
+          mk('Elevación de gemelos', 4, '15-20', 45, 40, 5, 'elevacion de gemelos')
+        ] }
+      ]
+    }];
+  }
+
+  openRoutine(id) { this.setState({ screen: 'routine', routineId: id }); }
+  openDay(id) { this.setState({ screen: 'day', dayId: id }); }
+  back() {
+    const s = this.state;
+    if (s.screen === 'day') this.setState({ screen: 'routine', dayId: null });
+    else if (s.screen === 'routine') this.setState({ screen: 'home', routineId: null });
+  }
+
+  getRoutine() { return this.state.routines.find(r => r.id === this.state.routineId); }
+  getDay() { const r = this.getRoutine(); return r && r.days.find(d => d.id === this.state.dayId); }
+
+  update(fn) {
+    const routines = JSON.parse(JSON.stringify(this.state.routines));
+    fn(routines);
+    this.setState({ routines });
+    this.persist(routines);
+  }
+
+  deleteRoutine(id) { this.update(rs => { const i = rs.findIndex(r => r.id === id); if (i >= 0) rs.splice(i, 1); }); }
+  deleteDay(id) { this.update(rs => { const r = rs.find(x => x.id === this.state.routineId); if (r) { const i = r.days.findIndex(d => d.id === id); if (i >= 0) r.days.splice(i, 1); } }); }
+  deleteExercise(id) { this.update(rs => { const r = rs.find(x => x.id === this.state.routineId); const d = r && r.days.find(x => x.id === this.state.dayId); if (d) { const i = d.exercises.findIndex(e => e.id === id); if (i >= 0) d.exercises.splice(i, 1); } }); }
+
+  setWeight(exId, wkId, val) {
+    const num = parseFloat(val);
+    this.update(rs => {
+      const r = rs.find(x => x.id === this.state.routineId);
+      const d = r && r.days.find(x => x.id === this.state.dayId);
+      const e = d && d.exercises.find(x => x.id === exId);
+      const w = e && e.weeks.find(x => x.id === wkId);
+      if (w) w.weight = isNaN(num) ? 0 : num;
+    });
+  }
+
+  toggleSet(exId, wkId, idx, rest, exName) {
+    let turnedOn = false;
+    this.update(rs => {
+      const r = rs.find(x => x.id === this.state.routineId);
+      const d = r && r.days.find(x => x.id === this.state.dayId);
+      const e = d && d.exercises.find(x => x.id === exId);
+      const w = e && e.weeks.find(x => x.id === wkId);
+      if (w) { w.doneSets[idx] = !w.doneSets[idx]; turnedOn = w.doneSets[idx]; }
+    });
+    if (turnedOn) this.startTimer(rest, exName);
+  }
+
+  toggleUnit() { const u = this.state.unit === 'kg' ? 'lb' : 'kg'; this.setState({ unit: u }); this.persist(null, u); }
+
+  openModal(m) { this.setState({ modal: m }); }
+  closeModal() { this.setState({ modal: null }); }
+  setModal(field, val) { this.setState(s => ({ modal: { ...s.modal, [field]: val } })); }
+
+  saveModal() {
+    const m = this.state.modal; if (!m) return;
+    if (m.type === 'routine') {
+      const name = (m.name || '').trim() || 'Rutina nueva';
+      this.update(rs => { if (m.id) { const r = rs.find(x => x.id === m.id); if (r) r.name = name; } else { rs.push({ id: this.uid(), name, days: [] }); } });
+    } else if (m.type === 'day') {
+      const name = (m.name || '').trim() || 'Día nuevo';
+      this.update(rs => { const r = rs.find(x => x.id === this.state.routineId); if (r) { if (m.id) { const d = r.days.find(x => x.id === m.id); if (d) d.name = name; } else { r.days.push({ id: this.uid(), name, exercises: [] }); } } });
+    } else if (m.type === 'exercise') {
+      const name = (m.name || '').trim() || 'Ejercicio';
+      const sets = Math.max(1, parseInt(m.sets) || 1);
+      const wkCount = Math.max(1, parseInt(m.weeks) || 1);
+      const rest = Math.max(5, parseInt(m.rest) || 60);
+      const reps = (m.reps || '').trim() || '8-12';
+      const video = (m.videoUrl || '').trim();
+      this.update(rs => {
+        const r = rs.find(x => x.id === this.state.routineId);
+        const d = r && r.days.find(x => x.id === this.state.dayId);
+        if (!d) return;
+        if (m.id) {
+          const e = d.exercises.find(x => x.id === m.id);
+          if (e) {
+            e.name = name; e.sets = sets; e.reps = reps; e.restSeconds = rest; e.videoUrl = video;
+            const old = e.weeks; const weeks = [];
+            for (let i = 0; i < wkCount; i++) {
+              const prev = old[i];
+              const doneSets = prev ? prev.doneSets.slice(0, sets) : [];
+              while (doneSets.length < sets) doneSets.push(false);
+              weeks.push({ id: prev ? prev.id : this.uid(), label: 'Sem ' + (i + 1), weight: prev ? prev.weight : 0, doneSets });
+            }
+            e.weeks = weeks;
+          }
+        } else {
+          d.exercises.push({
+            id: this.uid(), name, sets, reps, restSeconds: rest, videoUrl: video,
+            weeks: Array.from({ length: wkCount }, (_, i) => ({ id: this.uid(), label: 'Sem ' + (i + 1), weight: 0, doneSets: new Array(sets).fill(false) }))
+          });
+        }
+      });
+    }
+    this.closeModal();
+  }
+
+  startTimer(sec, label) {
+    sec = sec || 60;
+    if (this._int) clearInterval(this._int);
+    this.setState({ timer: { total: sec, remaining: sec, running: true, label: label || 'Descanso' } });
+    this._int = setInterval(() => this.tick(), 1000);
+  }
+  tick() {
+    this.setState(s => {
+      if (!s.timer) return {};
+      const rem = s.timer.remaining - 1;
+      if (rem <= 0) { if (this._int) clearInterval(this._int); this.beep(); return { timer: { ...s.timer, remaining: 0, running: false } }; }
+      return { timer: { ...s.timer, remaining: rem } };
+    });
+  }
+  pauseResume() {
+    const t = this.state.timer; if (!t) return;
+    if (t.running) { if (this._int) clearInterval(this._int); this.setState({ timer: { ...t, running: false } }); }
+    else { if (t.remaining <= 0) return; this.setState({ timer: { ...t, running: true } }); if (this._int) clearInterval(this._int); this._int = setInterval(() => this.tick(), 1000); }
+  }
+  addTime(d) { this.setState(s => { if (!s.timer) return {}; const rem = Math.max(0, s.timer.remaining + d); const total = Math.max(s.timer.total, rem); return { timer: { ...s.timer, remaining: rem, total } }; }); }
+  resetTimer() { const t = this.state.timer; if (!t) return; if (this._int) clearInterval(this._int); this.setState({ timer: { ...t, remaining: t.total, running: true } }); this._int = setInterval(() => this.tick(), 1000); }
+  setPreset(sec) { if (this._int) clearInterval(this._int); const label = (this.state.timer && this.state.timer.label) || 'Descanso'; this.setState({ timer: { total: sec, remaining: sec, running: true, label } }); this._int = setInterval(() => this.tick(), 1000); }
+  closeTimer() { if (this._int) clearInterval(this._int); this.setState({ timer: null }); }
+  beep() {
+    try {
+      const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+      const ctx = new C();
+      [0, 0.25, 0.5].forEach(t => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.18);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.2);
+      });
+    } catch (e) {}
+  }
+
+  fmt(s) { const m = Math.floor(s / 60); const ss = s % 60; return m + ':' + (ss < 10 ? '0' : '') + ss; }
+  openVideo(url) { if (url) window.open(url, '_blank'); }
+
+  renderVals() {
+    const s = this.state;
+    const base = {
+      unit: s.unit,
+      isHome: s.screen === 'home',
+      isRoutine: s.screen === 'routine',
+      isDay: s.screen === 'day',
+      showBack: s.screen !== 'home',
+      onBack: () => this.back(),
+      onToggleUnit: () => this.toggleUnit(),
+      stop: (e) => e.stopPropagation()
+    };
+
+    const m = s.modal;
+    base.modal = m;
+    base.modalOpen = !!m;
+    base.modalIsExercise = !!(m && m.type === 'exercise');
+    base.modalTitle = m ? (m.id ? 'Editar ' : 'Nuevo ') + (m.type === 'routine' ? 'rutina' : m.type === 'day' ? 'día' : 'ejercicio') : '';
+    base.onMName = e => this.setModal('name', e.target.value);
+    base.onMVideo = e => this.setModal('videoUrl', e.target.value);
+    base.onMSets = e => this.setModal('sets', e.target.value);
+    base.onMReps = e => this.setModal('reps', e.target.value);
+    base.onMRest = e => this.setModal('rest', e.target.value);
+    base.onMWeeks = e => this.setModal('weeks', e.target.value);
+    base.onMSave = () => this.saveModal();
+    base.onMCancel = () => this.closeModal();
+
+    const t = s.timer;
+    base.timer = t ? {
+      mmss: this.fmt(t.remaining),
+      dash: 326.7 * (1 - (t.total ? t.remaining / t.total : 0)),
+      label: t.label,
+      toggleLabel: t.running ? 'Pausar' : (t.remaining <= 0 ? 'Reiniciar' : 'Reanudar')
+    } : null;
+    base.onTimerToggle = () => { const tt = this.state.timer; if (tt && tt.remaining <= 0) this.resetTimer(); else this.pauseResume(); };
+    base.onTimerAdd = () => this.addTime(15);
+    base.onTimerSub = () => this.addTime(-15);
+    base.onTimerReset = () => this.resetTimer();
+    base.onTimerClose = () => this.closeTimer();
+    base.onPreset60 = () => this.setPreset(60);
+    base.onPreset90 = () => this.setPreset(90);
+    base.onPreset120 = () => this.setPreset(120);
+
+    if (s.screen === 'home') {
+      base.title = 'Mis rutinas';
+      base.routines = s.routines.map(r => ({
+        id: r.id, name: r.name,
+        meta: r.days.length + ' días · ' + r.days.reduce((a, d) => a + d.exercises.length, 0) + ' ejercicios',
+        onOpen: () => this.openRoutine(r.id),
+        onEdit: (e) => { e.stopPropagation(); this.openModal({ type: 'routine', id: r.id, name: r.name }); },
+        onDelete: (e) => { e.stopPropagation(); this.deleteRoutine(r.id); }
+      }));
+      base.hasItems = s.routines.length > 0;
+      base.onAdd = () => this.openModal({ type: 'routine', name: '' });
+      base.addLabel = '＋  Rutina nueva';
+      base.emptyText = 'Crea tu primera rutina con el botón de abajo.';
+    } else if (s.screen === 'routine') {
+      const r = this.getRoutine();
+      base.title = r ? r.name : '';
+      base.subtitle = r ? (r.days.length + (r.days.length === 1 ? ' día' : ' días')) : '';
+      base.days = r ? r.days.map(d => ({
+        id: d.id, name: d.name,
+        meta: d.exercises.length + (d.exercises.length === 1 ? ' ejercicio' : ' ejercicios'),
+        onOpen: () => this.openDay(d.id),
+        onEdit: (e) => { e.stopPropagation(); this.openModal({ type: 'day', id: d.id, name: d.name }); },
+        onDelete: (e) => { e.stopPropagation(); this.deleteDay(d.id); }
+      })) : [];
+      base.hasItems = !!(r && r.days.length > 0);
+      base.onAdd = () => this.openModal({ type: 'day', name: '' });
+      base.addLabel = '＋  Agregar día';
+      base.emptyText = 'Agrega los días de esta rutina (Push, Pull, Legs...).';
+    } else if (s.screen === 'day') {
+      const d = this.getDay();
+      base.title = d ? d.name : '';
+      base.exercises = d ? d.exercises.map(ex => ({
+        id: ex.id, name: ex.name,
+        sub: ex.sets + ' series · ' + ex.reps + ' reps · descanso ' + ex.restSeconds + 's',
+        hasVideo: !!ex.videoUrl,
+        onVideo: () => this.openVideo(ex.videoUrl),
+        onTimer: () => this.startTimer(ex.restSeconds, ex.name),
+        onEdit: () => this.openModal({ type: 'exercise', id: ex.id, name: ex.name, videoUrl: ex.videoUrl, sets: ex.sets, reps: ex.reps, rest: ex.restSeconds, weeks: ex.weeks.length }),
+        onDelete: () => this.deleteExercise(ex.id),
+        weeks: ex.weeks.map(w => ({
+          id: w.id, label: w.label, weight: w.weight,
+          onWeight: (e) => this.setWeight(ex.id, w.id, e.target.value),
+          sets: w.doneSets.map((dn, i) => ({ idx: i, num: i + 1, done: dn, notDone: !dn, onToggle: () => this.toggleSet(ex.id, w.id, i, ex.restSeconds, ex.name) }))
+        }))
+      })) : [];
+      base.hasItems = !!(d && d.exercises.length > 0);
+      base.onAdd = () => this.openModal({ type: 'exercise', name: '', videoUrl: '', sets: 4, reps: '8-12', rest: 90, weeks: 4 });
+      base.addLabel = '＋  Agregar ejercicio';
+      base.emptyText = 'Agrega ejercicios con sus series y cargas.';
+    }
+
+    base.noItems = !base.hasItems;
+    return base;
+  }
+}
+</script>
+</body>
+</html>
