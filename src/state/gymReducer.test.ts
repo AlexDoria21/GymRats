@@ -102,6 +102,46 @@ describe('duplicate', () => {
   });
 });
 
+describe('reorder days', () => {
+  it('moves a day to another position (drag and drop) and is a no-op on same id', () => {
+    let s = base();
+    s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
+    const [a, b, c] = s.routines[0].days.map((d) => d.id);
+
+    // drag the first day onto the third position
+    s = reducer(s, { type: 'REORDER_DAY', activeId: a, overId: c });
+    expect(s.routines[0].days.map((d) => d.id)).toEqual([b, c, a]);
+
+    // drag it back to the front
+    s = reducer(s, { type: 'REORDER_DAY', activeId: a, overId: b });
+    expect(s.routines[0].days.map((d) => d.id)).toEqual([a, b, c]);
+
+    // dropping onto itself changes nothing
+    const order = s.routines[0].days.map((d) => d.id);
+    s = reducer(s, { type: 'REORDER_DAY', activeId: a, overId: a });
+    expect(s.routines[0].days.map((d) => d.id)).toEqual(order);
+  });
+});
+
+describe('suggested exercises', () => {
+  it('adds a suggested exercise to the current day with defaults', () => {
+    let s = base();
+    s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
+    s = reducer(s, { type: 'OPEN_DAY', id: s.routines[0].days[0].id });
+    const before = s.routines[0].days[0].exercises.length;
+
+    s = reducer(s, { type: 'ADD_SUGGESTED_EXERCISE', name: 'Remo en T' });
+    const list = s.routines[0].days[0].exercises;
+    expect(list).toHaveLength(before + 1);
+    const ex = list[list.length - 1];
+    expect(ex.name).toBe('Remo en T');
+    expect(ex.sets).toBe(4);
+    expect(ex.weeks).toHaveLength(4);
+    expect(ex.weeks[0].doneSets).toHaveLength(4);
+    expect(ex.videoUrl).toContain('youtube.com/results');
+  });
+});
+
 describe('import', () => {
   it('replaces data and resets navigation', () => {
     let s = base();
@@ -164,7 +204,6 @@ describe('modal save', () => {
       modal: {
         type: 'exercise',
         name: 'Fondos',
-        videoUrl: '',
         sets: 3,
         reps: '8',
         rest: 75,
@@ -178,6 +217,9 @@ describe('modal save', () => {
     expect(ex.name).toBe('Fondos');
     expect(ex.weeks).toHaveLength(5);
     expect(ex.weeks[0].doneSets).toHaveLength(3);
+    // videoUrl derived automatically from the name (YouTube search)
+    expect(ex.videoUrl).toContain('youtube.com/results');
+    expect(ex.videoUrl).toContain('Fondos');
   });
 
   it('edits an exercise and resizes its weeks/sets preserving prior weights', () => {
@@ -195,7 +237,6 @@ describe('modal save', () => {
         type: 'exercise',
         id: ex.id,
         name: 'Press inclinado',
-        videoUrl: '',
         sets: 2,
         reps: ex.reps,
         rest: ex.restSeconds,

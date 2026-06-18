@@ -1,4 +1,5 @@
 import { useGym } from '../../state/GymContext';
+import { PALETTE } from '../../lib/palette';
 import { EmptyHome, ListRow } from '../common';
 
 export function HomeScreen() {
@@ -6,7 +7,7 @@ export function HomeScreen() {
 
   return (
     <div className="flex flex-col gap-3 px-4 pt-4 pb-2">
-      {state.routines.map((r) => {
+      {state.routines.map((r, i) => {
         const exercises = r.days.reduce((a, d) => a + d.exercises.length, 0);
         const meta = `${r.days.length} días · ${exercises} ejercicios`;
         return (
@@ -14,6 +15,7 @@ export function HomeScreen() {
             key={r.id}
             name={r.name}
             meta={meta}
+            accent={PALETTE[i % PALETTE.length]}
             onOpen={() => openRoutine(r.id)}
             onEdit={() => openModal({ type: 'routine', id: r.id, name: r.name })}
             onDuplicate={() => duplicateRoutine(r.id)}

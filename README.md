@@ -40,7 +40,9 @@ src/
     id.ts               generador de ids
     seed.ts             datos de ejemplo
     storage.ts          persistencia en localStorage
-    format.ts           tiempo, anillo del timer, beep, abrir video
+    format.ts           tiempo, anillo del timer, beep, abrir/buscar video
+    palette.ts          colores de acento por categoría
+    suggestions.ts      ejercicios sugeridos por categoría del día
   state/
     gymReducer.ts       estado + reducer (immer)
     useRestTimer.ts     hook del temporizador de descanso
@@ -53,33 +55,46 @@ src/
 ## PWA (instalable + offline)
 
 La app es una **PWA**: se puede instalar en el teléfono/escritorio y funciona sin
-conexión. El service worker (vía `vite-plugin-pwa`) precachea la app y la base de
-ejercicios (`exercises.json`), y cachea las imágenes del CDN al verlas.
+conexión. El service worker (vía `vite-plugin-pwa`) precachea el app shell.
 
 - El service worker **solo se activa en el build de producción**, no en `npm run dev`.
 - Para probar la instalación: `npm run build && npm run preview` y abre la URL local;
   el navegador mostrará el botón "Instalar".
 - Iconos en `public/` generados con `npm run icons` (fuente en `scripts/gen-icons.mjs`).
 
-## Buscador de ejercicios
+## Ejercicios y video guía
 
-Al crear un ejercicio, el campo *Nombre* es un buscador sobre
-[free-exercise-db](https://github.com/yuhonas/free-exercise-db) (873 ejercicios).
-Acepta búsquedas en español (sinónimos de movimientos + etiquetas de músculo/equipo)
-y, al elegir uno, rellena el nombre y el enlace de guía de YouTube. Los nombres de la
-base vienen en inglés y quedan editables.
+Al crear un ejercicio escribes su *Nombre* como texto libre. El **enlace de guía es
+interno**: se genera automáticamente como una búsqueda de YouTube a partir del nombre
+(`youtubeSearch()` en `src/lib/format.ts`), sin caja de URL visible. El botón ▶ de cada
+ejercicio abre esa búsqueda.
+
+**Sugerencias por día**: dentro de un día se muestran chips de ejercicios sugeridos según
+la categoría detectada en su *nombre* (Push, Pull, Legs, Pecho, Espalda, Hombro, Bíceps,
+Tríceps, Cuádriceps, Glúteo). Un día combinado (ej. `Pecho/Bícep`) une las listas. Al tocar
+una chip se agrega el ejercicio al instante con valores por defecto (editable luego). La
+lógica y la lista curada están en `src/lib/suggestions.ts`.
 
 ## Funciones
 
 - Rutinas → días → ejercicios, con carga por semana y marcado de series.
+- **Placeholders por tipo de card** (rutina / día / ejercicio), cada uno con su ejemplo.
+- **Presets de día** (Push, Pull, Legs, Pecho/Bícep…) como chips al crear un día, con
+  texto libre para combinaciones propias (ej. `Espalda/Hombro/Cuádriceps`).
+- **Video guía interno**: se deriva del nombre del ejercicio; el botón ▶ abre la búsqueda
+  en YouTube (sin caja de URL).
+- **Sugerencias de ejercicios por día**: chips según la categoría del nombre del día; un
+  toque agrega el ejercicio con valores por defecto.
 - **Confirmación al borrar** (rutina/día/ejercicio).
 - **Duplicar** rutina o día (botón con icono de copia).
+- **Reordenar días** con **drag & drop** táctil (asa ⠿, vía `@dnd-kit`).
+- **Acento por categoría**: cada rutina/día toma un tono de la paleta, con hover animado
+  y feedback al pulsar.
 - **Export / Import** de datos en JSON (menú ••• → Datos), con saneo de archivos.
 - **Conversión real kg ↔ lb** (convierte todos los pesos al cambiar de unidad).
 - **Temporizador de descanso** con minimizar (sigue en segundo plano, chip en la
   cabecera), vibración al terminar, presets y ±15s.
 - **Gráficas de progreso** + **1RM estimado (Epley)** y PR por ejercicio.
-- **Buscador de ejercicios** (free-exercise-db, 873 ejercicios, búsqueda en español).
 - **PWA** instalable y offline.
 - **Accesibilidad**: diálogos con `role="dialog"`, cierre con `Esc`, focus-trap y
   restauración de foco, `aria-label` en botones de icono.
@@ -88,7 +103,38 @@ base vienen en inglés y quedan editables.
 
 - Sesiones con fecha real (progreso temporal, no por índice de semana).
 - Sincronización en la nube (Supabase) con cuentas.
-- Nombres de ejercicios en español nativo (API de wger).
 - Tests de componentes (React Testing Library).
 
 El prototipo original se conserva en `prototype/` como referencia visual.
+
+
+## Cambios recientes
+
+Las observaciones pendientes ya están implementadas (ver **Funciones**):
+
+1. **Placeholders por tipo de card** — rutina, día y ejercicio tienen su propio ejemplo
+   en el campo *Nombre* (antes se compartía uno solo).
+2. **Presets de día** — al crear un día aparecen chips (Push, Pull, Legs, Pecho/Bícep…)
+   que rellenan el nombre, manteniendo el texto libre para combinaciones propias.
+3. **Video guía interno** — se quitó la caja de URL; el enlace se genera automáticamente
+   desde el nombre del ejercicio y el botón ▶ abre la búsqueda en YouTube.
+4. **Reordenar días** — con drag & drop táctil (asa ⠿) en lugar de flechas.
+5. **Paleta con acento por categoría** — colores extra (azul/violeta/verde), hover
+   animado y feedback de tono al pulsar rutina/día.
+6. **Sugerencias de ejercicios por día** — dentro de un día se muestran chips de
+   ejercicios acordes a la categoría de su nombre (une categorías en días combinados);
+   un toque agrega el ejercicio. Se mantiene el texto libre y las chips de nombre.
+
+Además se **eliminó el buscador de ejercicios** (free-exercise-db): se borraron
+`public/exercises.json` (~1.2 MB) y los módulos `exerciseDb`, `useExerciseSearch` y
+`ExerciseSearchInput`. El campo *Nombre* del ejercicio pasó a ser texto libre y el
+precache de la PWA bajó de ~1.3 MB a ~0.3 MB.
+
+## Observaciones
+
+- ✅ **Sugerencias de ejercicios por día** (implementado, ver **Cambios recientes** y
+  **Ejercicios y video guía**). Decisiones tomadas: se **mantiene** el texto libre y las
+  chips de nombre del día; las sugerencias son **aditivas** y se basan en la categoría
+  detectada en el nombre del día, no en reemplazar la entrada manual.
+
+

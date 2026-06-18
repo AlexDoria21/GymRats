@@ -35,6 +35,8 @@ interface GymContextValue {
 
   duplicateRoutine: (id: string) => void;
   duplicateDay: (id: string) => void;
+  reorderDay: (activeId: string, overId: string) => void;
+  addSuggestedExercise: (name: string) => void;
 
   importData: (data: GymData) => void;
   openSettings: () => void;
@@ -109,6 +111,8 @@ export function GymProvider({ children }: { children: ReactNode }) {
 
     duplicateRoutine: (id) => dispatch({ type: 'DUPLICATE_ROUTINE', id }),
     duplicateDay: (id) => dispatch({ type: 'DUPLICATE_DAY', id }),
+    reorderDay: (activeId, overId) => dispatch({ type: 'REORDER_DAY', activeId, overId }),
+    addSuggestedExercise: (name) => dispatch({ type: 'ADD_SUGGESTED_EXERCISE', name }),
 
     importData: (data) =>
       dispatch({ type: 'IMPORT_DATA', routines: data.routines, unit: data.unit }),

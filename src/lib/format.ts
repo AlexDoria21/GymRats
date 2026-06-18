@@ -16,6 +16,11 @@ export function openVideo(url: string): void {
   if (url) window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+/** Build a YouTube search URL for an exercise guide from its name. */
+export function youtubeSearch(name: string): string {
+  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(name + ' tecnica');
+}
+
 /** Three short beeps via the Web Audio API. */
 export function beep(): void {
   try {

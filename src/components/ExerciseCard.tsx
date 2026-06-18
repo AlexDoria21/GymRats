@@ -14,17 +14,15 @@ export function ExerciseCard({ exercise: ex }: { exercise: Exercise }) {
           <div className="text-[16px] font-semibold text-[#f3f3f4]">{ex.name}</div>
           <div className="mt-1 text-[12.5px] text-[#82828a]">{sub}</div>
         </div>
-        {ex.videoUrl && (
-          <button
-            onClick={() => playVideo(ex.videoUrl)}
-            title="Ver guía"
-            className="flex h-[37px] w-[37px] flex-none cursor-pointer items-center justify-center rounded-[10px] border border-[#2a2a2e] bg-[#1a1a1d]"
-          >
-            <svg width="13" height="13" viewBox="0 0 12 12">
-              <polygon points="2,1 11,6 2,11" fill="#3d9bff" />
-            </svg>
-          </button>
-        )}
+        <button
+          onClick={() => playVideo(ex.videoUrl)}
+          title="Ver guía"
+          className="flex h-[37px] w-[37px] flex-none cursor-pointer items-center justify-center rounded-[10px] border border-[#2a2a2e] bg-[#1a1a1d]"
+        >
+          <svg width="13" height="13" viewBox="0 0 12 12">
+            <polygon points="2,1 11,6 2,11" fill="#3d9bff" />
+          </svg>
+        </button>
         <button
           onClick={() => openChart(ex.id)}
           title="Ver progreso"
@@ -122,7 +120,6 @@ export function ExerciseCard({ exercise: ex }: { exercise: Exercise }) {
               type: 'exercise',
               id: ex.id,
               name: ex.name,
-              videoUrl: ex.videoUrl,
               sets: ex.sets,
               reps: ex.reps,
               rest: ex.restSeconds,

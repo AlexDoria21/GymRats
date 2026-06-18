@@ -17,7 +17,6 @@ export function Fab() {
       openModal({
         type: 'exercise',
         name: '',
-        videoUrl: '',
         sets: 4,
         reps: '8-12',
         rest: 90,

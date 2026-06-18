@@ -4,6 +4,7 @@ import { loadData } from '../lib/storage';
 import { seed } from '../lib/seed';
 import { convertWeight } from '../lib/convert';
 import { cloneDay, cloneRoutine } from '../lib/clone';
+import { youtubeSearch } from '../lib/format';
 import type { Day, Exercise, ModalField, ModalState, Routine, Screen, Unit } from '../types';
 
 export type DeleteKind = 'routine' | 'day' | 'exercise';
@@ -44,6 +45,8 @@ export type Action =
   | { type: 'CANCEL_DELETE' }
   | { type: 'DUPLICATE_ROUTINE'; id: string }
   | { type: 'DUPLICATE_DAY'; id: string }
+  | { type: 'REORDER_DAY'; activeId: string; overId: string }
+  | { type: 'ADD_SUGGESTED_EXERCISE'; name: string }
   | { type: 'IMPORT_DATA'; routines: Routine[]; unit: Unit }
   | { type: 'OPEN_SETTINGS' }
   | { type: 'CLOSE_SETTINGS' }
@@ -79,6 +82,30 @@ function draftExercise(s: GymState, exId: string): Exercise | undefined {
   return draftDay(s)?.exercises.find((e) => e.id === exId);
 }
 
+/** Build a fresh exercise with the given name and parameters. */
+function buildExercise(
+  name: string,
+  sets: number,
+  reps: string,
+  rest: number,
+  wkCount: number
+): Exercise {
+  return {
+    id: uid(),
+    name,
+    sets,
+    reps,
+    restSeconds: rest,
+    videoUrl: youtubeSearch(name),
+    weeks: Array.from({ length: wkCount }, (_, i) => ({
+      id: uid(),
+      label: 'Sem ' + (i + 1),
+      weight: 0,
+      doneSets: new Array(sets).fill(false),
+    })),
+  };
+}
+
 function applySaveModal(s: GymState): void {
   const m = s.modal;
   if (!m) return;
@@ -107,7 +134,6 @@ function applySaveModal(s: GymState): void {
     const wkCount = Math.max(1, parseInt(String(m.weeks), 10) || 1);
     const rest = Math.max(5, parseInt(String(m.rest), 10) || 60);
     const reps = (m.reps || '').trim() || '8-12';
-    const video = (m.videoUrl || '').trim();
     const d = draftDay(s);
     if (!d) return;
 
@@ -118,7 +144,7 @@ function applySaveModal(s: GymState): void {
       e.sets = sets;
       e.reps = reps;
       e.restSeconds = rest;
-      e.videoUrl = video;
+      e.videoUrl = youtubeSearch(name);
       const old = e.weeks;
       const weeks = [];
       for (let i = 0; i < wkCount; i++) {
@@ -134,20 +160,7 @@ function applySaveModal(s: GymState): void {
       }
       e.weeks = weeks;
     } else {
-      d.exercises.push({
-        id: uid(),
-        name,
-        sets,
-        reps,
-        restSeconds: rest,
-        videoUrl: video,
-        weeks: Array.from({ length: wkCount }, (_, i) => ({
-          id: uid(),
-          label: 'Sem ' + (i + 1),
-          weight: 0,
-          doneSets: new Array(sets).fill(false),
-        })),
-      });
+      d.exercises.push(buildExercise(name, sets, reps, rest, wkCount));
     }
   }
   s.modal = null;
@@ -256,6 +269,23 @@ export function reducer(state: GymState, action: Action): GymState {
         const copy = cloneDay(r.days[i]);
         copy.name = copy.name + ' (copia)';
         r.days.splice(i + 1, 0, copy);
+      });
+    case 'REORDER_DAY':
+      if (action.activeId === action.overId) return state;
+      return produce(state, (d) => {
+        const r = draftRoutine(d);
+        if (!r) return;
+        const from = r.days.findIndex((x) => x.id === action.activeId);
+        const to = r.days.findIndex((x) => x.id === action.overId);
+        if (from < 0 || to < 0) return;
+        const [moved] = r.days.splice(from, 1);
+        r.days.splice(to, 0, moved);
+      });
+    case 'ADD_SUGGESTED_EXERCISE':
+      return produce(state, (d) => {
+        const day = draftDay(d);
+        if (!day) return;
+        day.exercises.push(buildExercise(action.name, 4, '8-12', 90, 4));
       });
     case 'IMPORT_DATA':
       return {

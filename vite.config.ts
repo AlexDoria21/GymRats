@@ -30,23 +30,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // precache the app shell + the exercise database (works fully offline)
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2,json}'],
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // precache the app shell (works fully offline)
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
-        runtimeCaching: [
-          {
-            // exercise thumbnails served from jsDelivr CDN
-            urlPattern: ({ url }) => url.hostname === 'cdn.jsdelivr.net',
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'exercise-images',
-              expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
       },
     }),
   ],

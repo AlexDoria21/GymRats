@@ -43,11 +43,10 @@ export type ModalState =
       type: 'exercise';
       id?: string;
       name: string;
-      videoUrl: string;
       sets: number | string;
       reps: string;
       rest: number | string;
       weeks: number | string;
     };
 
-export type ModalField = 'name' | 'videoUrl' | 'sets' | 'reps' | 'rest' | 'weeks';
+export type ModalField = 'name' | 'sets' | 'reps' | 'rest' | 'weeks';
