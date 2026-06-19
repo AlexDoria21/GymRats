@@ -95,6 +95,15 @@ async function nativeCancel(id: number) {
     /* ignore */
   }
 }
+/** Post a notification immediately (no schedule.at → fires now). */
+async function nativeNotifyNow(id: number, title: string, body: string) {
+  try {
+    if ((await LocalNotifications.checkPermissions()).display !== 'granted') return;
+    await LocalNotifications.schedule({ notifications: [{ id, title, body }] });
+  } catch {
+    /* ignore */
+  }
+}
 
 // --- web (service worker) helpers ---
 /** Active service worker registration, or null (e.g. in dev where there is no SW). */
@@ -120,9 +129,15 @@ async function cancelByTag(tag: string): Promise<void> {
   }
 }
 
-/** Show the notification right now (web only; on native the scheduled one fires). */
+/** Show the notification right now. */
 export async function notify(title: string, body: string): Promise<void> {
-  if (native) return; // the OS-scheduled notification handles display
+  if (native) {
+    // The JS countdown reaches zero ~half a second before the pre-scheduled OS
+    // alarm would, and the timer then cancels that alarm — so when the app is in
+    // the foreground we must post the notification ourselves, right now.
+    await nativeNotifyNow(REST_ID, title, body);
+    return;
+  }
   if (!canNotify() || Notification.permission !== 'granted') return;
   const options: RestNotificationOptions = {
     body,

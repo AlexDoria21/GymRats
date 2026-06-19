@@ -51,8 +51,10 @@ export function useRestTimer(): RestTimer {
     firedRef.current = true;
     beep();
     navigator.vibrate?.([200, 100, 200]);
+    // Show the alert now. Do NOT cancel the scheduled notification here: on native
+    // that would dismiss the notification we just posted (same id), and on web the
+    // shared tag means the triggered one replaces this rather than duplicating it.
     void notify(FINISH_TITLE, label);
-    void cancelScheduled();
   };
 
   const tick = () => {
