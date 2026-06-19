@@ -96,27 +96,15 @@ export function Modal() {
                 />
               </div>
             </div>
-            <div className="flex gap-2.5">
-              <div className="flex-1">
-                <label className={LABEL}>Descanso (seg)</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={m.rest}
-                  onChange={(e) => setModalField('rest', e.target.value)}
-                  className={INPUT}
-                />
-              </div>
-              <div className="flex-1">
-                <label className={LABEL}>Semanas</label>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={m.weeks}
-                  onChange={(e) => setModalField('weeks', e.target.value)}
-                  className={INPUT}
-                />
-              </div>
+            <div>
+              <label className={LABEL}>Descanso (seg)</label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={m.rest}
+                onChange={(e) => setModalField('rest', e.target.value)}
+                className={INPUT}
+              />
             </div>
           </>
         )}

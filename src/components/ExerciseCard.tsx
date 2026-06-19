@@ -2,9 +2,25 @@ import { useGym } from '../state/GymContext';
 import type { Exercise } from '../types';
 
 export function ExerciseCard({ exercise: ex }: { exercise: Exercise }) {
-  const { state, setWeight, toggleSet, requestDelete, openModal, startRest, playVideo, openChart } =
-    useGym();
+  const {
+    state,
+    currentDay,
+    setWeight,
+    toggleSet,
+    addWeek,
+    deleteWeek,
+    linkSuperset,
+    unlinkSuperset,
+    requestDelete,
+    openModal,
+    startRest,
+    playVideo,
+    openChart,
+  } = useGym();
   const sub = `${ex.sets} series · ${ex.reps} reps · descanso ${ex.restSeconds}s`;
+  const grouped = !!ex.supersetId;
+  const idx = currentDay?.exercises.findIndex((e) => e.id === ex.id) ?? -1;
+  const hasNext = idx >= 0 && currentDay ? idx + 1 < currentDay.exercises.length : false;
 
   return (
     <div className="flex flex-col gap-[14px] rounded-2xl border border-[#26262b] bg-[#161618] p-4">
@@ -108,9 +124,41 @@ export function ExerciseCard({ exercise: ex }: { exercise: Exercise }) {
                 </button>
               ))}
             </div>
+            {ex.weeks.length > 1 && (
+              <button
+                onClick={() => deleteWeek(ex.id, w.id)}
+                title={`Eliminar ${w.label}`}
+                aria-label={`Eliminar ${w.label}`}
+                className="flex h-[28px] w-[28px] flex-none cursor-pointer items-center justify-center rounded-[8px] border border-[#3a2422] bg-transparent text-[16px] leading-none text-[#ff6b5e]"
+              >
+                ×
+              </button>
+            )}
           </div>
         ))}
+
+        <button
+          onClick={() => addWeek(ex.id)}
+          className="mt-0.5 cursor-pointer self-start rounded-[10px] border border-dashed border-[#2f2f35] bg-transparent px-3 py-[7px] text-[12.5px] font-medium text-[#b3b3ba]"
+        >
+          ＋ Agregar semana
+        </button>
       </div>
+
+      {/* biserie toggle */}
+      {(grouped || hasNext) && (
+        <button
+          onClick={() => (grouped ? unlinkSuperset(ex.id) : linkSuperset(ex.id))}
+          className={
+            'cursor-pointer self-start rounded-[10px] border px-3 py-[7px] text-[12.5px] font-medium ' +
+            (grouped
+              ? 'border-[#3a3320] bg-transparent text-[#e0b85e]'
+              : 'border-dashed border-[#2f2f35] bg-transparent text-[#b3b3ba]')
+          }
+        >
+          {grouped ? '⛓️‍💥 Separar biserie' : '🔗 Biserie con el siguiente'}
+        </button>
+      )}
 
       {/* footer actions */}
       <div className="flex gap-2 border-t border-[#232327] pt-3">
@@ -123,7 +171,6 @@ export function ExerciseCard({ exercise: ex }: { exercise: Exercise }) {
               sets: ex.sets,
               reps: ex.reps,
               rest: ex.restSeconds,
-              weeks: ex.weeks.length,
             })
           }
           className="flex-1 cursor-pointer rounded-[10px] border border-[#2a2a2e] bg-transparent p-[9px] text-[13px] font-medium text-[#b3b3ba]"

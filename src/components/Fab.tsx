@@ -20,7 +20,6 @@ export function Fab() {
         sets: 4,
         reps: '8-12',
         rest: 90,
-        weeks: 4,
       });
   };
 

@@ -7,6 +7,9 @@ function base(): GymState {
   return {
     routines: seed(),
     unit: 'kg',
+    sessions: [],
+    active: null,
+    finishConfirmOpen: false,
     screen: 'home',
     routineId: null,
     dayId: null,
@@ -136,9 +139,83 @@ describe('suggested exercises', () => {
     const ex = list[list.length - 1];
     expect(ex.name).toBe('Remo en T');
     expect(ex.sets).toBe(4);
-    expect(ex.weeks).toHaveLength(4);
+    expect(ex.weeks).toHaveLength(1);
     expect(ex.weeks[0].doneSets).toHaveLength(4);
     expect(ex.videoUrl).toContain('youtube.com/results');
+  });
+});
+
+describe('supersets / biseries', () => {
+  it('links two adjacent exercises into a shared group and unlinks them', () => {
+    let s = base();
+    s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
+    s = reducer(s, { type: 'OPEN_DAY', id: s.routines[0].days[0].id });
+    const exs = s.routines[0].days[0].exercises;
+    expect(exs.length).toBeGreaterThanOrEqual(2);
+    const [a, b] = exs;
+
+    s = reducer(s, { type: 'LINK_SUPERSET', exId: a.id });
+    let list = s.routines[0].days[0].exercises;
+    expect(list[0].supersetId).toBeTruthy();
+    expect(list[0].supersetId).toBe(list[1].supersetId);
+
+    // unlinking one leaves a single member -> group dissolves
+    s = reducer(s, { type: 'UNLINK_SUPERSET', exId: b.id });
+    list = s.routines[0].days[0].exercises;
+    expect(list[0].supersetId).toBeUndefined();
+    expect(list[1].supersetId).toBeUndefined();
+  });
+
+  it('does nothing when linking the last exercise (no next)', () => {
+    let s = base();
+    s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
+    s = reducer(s, { type: 'OPEN_DAY', id: s.routines[0].days[0].id });
+    const exs = s.routines[0].days[0].exercises;
+    const last = exs[exs.length - 1];
+    s = reducer(s, { type: 'LINK_SUPERSET', exId: last.id });
+    const updated = s.routines[0].days[0].exercises;
+    expect(updated[updated.length - 1].supersetId).toBeUndefined();
+  });
+});
+
+describe('day sessions', () => {
+  it('starts, records and clears an active session', () => {
+    let s = base();
+    s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
+    const r = s.routines[0];
+
+    s = reducer(s, { type: 'START_SESSION', routineId: r.id, routineName: r.name });
+    expect(s.active).not.toBeNull();
+    expect(s.active?.routineId).toBe(r.id);
+    expect(s.sessions).toHaveLength(0);
+
+    // a second start is ignored while one is active
+    const prevStart = s.active?.startedAt;
+    s = reducer(s, { type: 'START_SESSION', routineId: r.id, routineName: r.name });
+    expect(s.active?.startedAt).toBe(prevStart);
+
+    // finishing asks for confirmation first, then records on confirm
+    s = reducer(s, { type: 'REQUEST_FINISH_SESSION' });
+    expect(s.finishConfirmOpen).toBe(true);
+    s = reducer(s, { type: 'CANCEL_FINISH_SESSION' });
+    expect(s.finishConfirmOpen).toBe(false);
+    expect(s.active).not.toBeNull();
+
+    s = reducer(s, { type: 'FINISH_SESSION' });
+    expect(s.active).toBeNull();
+    expect(s.finishConfirmOpen).toBe(false);
+    expect(s.sessions).toHaveLength(1);
+    expect(s.sessions[0].routineId).toBe(r.id);
+    expect(s.sessions[0].endedAt).toBeGreaterThanOrEqual(s.sessions[0].startedAt);
+  });
+
+  it('cancels an active session without recording it', () => {
+    let s = base();
+    const r = s.routines[0];
+    s = reducer(s, { type: 'START_SESSION', routineId: r.id, routineName: r.name });
+    s = reducer(s, { type: 'CANCEL_SESSION' });
+    expect(s.active).toBeNull();
+    expect(s.sessions).toHaveLength(0);
   });
 });
 
@@ -147,7 +224,7 @@ describe('import', () => {
     let s = base();
     s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
     const imported = [{ id: 'r1', name: 'Importada', days: [] }];
-    s = reducer(s, { type: 'IMPORT_DATA', routines: imported, unit: 'lb' });
+    s = reducer(s, { type: 'IMPORT_DATA', routines: imported, unit: 'lb', sessions: [] });
     expect(s.routines).toEqual(imported);
     expect(s.unit).toBe('lb');
     expect(s.screen).toBe('home');
@@ -194,7 +271,7 @@ describe('modal save', () => {
     expect(s.routines[1].name).toBe('Rutina nueva');
   });
 
-  it('adds an exercise with the right number of weeks and sets', () => {
+  it('adds a new exercise starting with a single week', () => {
     let s = base();
     s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
     s = reducer(s, { type: 'OPEN_DAY', id: s.routines[0].days[0].id });
@@ -207,7 +284,6 @@ describe('modal save', () => {
         sets: 3,
         reps: '8',
         rest: 75,
-        weeks: 5,
       },
     });
     s = reducer(s, { type: 'SAVE_MODAL' });
@@ -215,18 +291,20 @@ describe('modal save', () => {
     expect(list).toHaveLength(before + 1);
     const ex = list[list.length - 1];
     expect(ex.name).toBe('Fondos');
-    expect(ex.weeks).toHaveLength(5);
+    expect(ex.weeks).toHaveLength(1);
+    expect(ex.weeks[0].label).toBe('Sem 1');
     expect(ex.weeks[0].doneSets).toHaveLength(3);
     // videoUrl derived automatically from the name (YouTube search)
     expect(ex.videoUrl).toContain('youtube.com/results');
     expect(ex.videoUrl).toContain('Fondos');
   });
 
-  it('edits an exercise and resizes its weeks/sets preserving prior weights', () => {
+  it('edits an exercise keeping its weeks and resizing each doneSets to the new set count', () => {
     let s = base();
     s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
     s = reducer(s, { type: 'OPEN_DAY', id: s.routines[0].days[0].id });
     const ex = s.routines[0].days[0].exercises[0];
+    const weekCount = ex.weeks.length;
     // set a weight then mark one set done
     s = reducer(s, { type: 'SET_WEIGHT', exId: ex.id, wkId: ex.weeks[0].id, value: '80' });
     s = reducer(s, { type: 'TOGGLE_SET', exId: ex.id, wkId: ex.weeks[0].id, idx: 0 });
@@ -240,18 +318,51 @@ describe('modal save', () => {
         sets: 2,
         reps: ex.reps,
         rest: ex.restSeconds,
-        weeks: 2,
       },
     });
     s = reducer(s, { type: 'SAVE_MODAL' });
     const updated = s.routines[0].days[0].exercises[0];
     expect(updated.name).toBe('Press inclinado');
-    expect(updated.weeks).toHaveLength(2);
+    // weeks preserved, not rebuilt by count
+    expect(updated.weeks).toHaveLength(weekCount);
     expect(updated.weeks[0].doneSets).toHaveLength(2);
-    // weight preserved on the kept first week
+    // weight preserved on the first week
     expect(updated.weeks[0].weight).toBe(80);
     // the done flag preserved (sliced to new set count)
     expect(updated.weeks[0].doneSets[0]).toBe(true);
+  });
+});
+
+describe('manual weeks', () => {
+  it('adds a week prefilled with the last week weight and relabels', () => {
+    let s = base();
+    s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
+    s = reducer(s, { type: 'OPEN_DAY', id: s.routines[0].days[0].id });
+    const ex = s.routines[0].days[0].exercises[0];
+    const count = ex.weeks.length;
+    s = reducer(s, { type: 'SET_WEIGHT', exId: ex.id, wkId: ex.weeks[count - 1].id, value: '95' });
+
+    s = reducer(s, { type: 'ADD_WEEK', exId: ex.id });
+    const updated = s.routines[0].days[0].exercises[0];
+    expect(updated.weeks).toHaveLength(count + 1);
+    const added = updated.weeks[updated.weeks.length - 1];
+    expect(added.label).toBe('Sem ' + (count + 1));
+    expect(added.weight).toBe(95);
+    expect(added.doneSets).toHaveLength(updated.sets);
+  });
+
+  it('deletes a week and relabels the rest', () => {
+    let s = base();
+    s = reducer(s, { type: 'OPEN_ROUTINE', id: s.routines[0].id });
+    s = reducer(s, { type: 'OPEN_DAY', id: s.routines[0].days[0].id });
+    const ex = s.routines[0].days[0].exercises[0];
+    const count = ex.weeks.length;
+
+    s = reducer(s, { type: 'DELETE_WEEK', exId: ex.id, wkId: ex.weeks[0].id });
+    const updated = s.routines[0].days[0].exercises[0];
+    expect(updated.weeks).toHaveLength(count - 1);
+    expect(updated.weeks[0].label).toBe('Sem 1');
+    expect(updated.weeks[updated.weeks.length - 1].label).toBe('Sem ' + (count - 1));
   });
 });
 

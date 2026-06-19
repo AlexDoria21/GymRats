@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { beep } from '../lib/format';
+import { cancelScheduled, notify, scheduleNotification } from '../lib/notify';
+
+const FINISH_TITLE = 'Descanso finalizado';
 
 export interface TimerState {
   total: number;
   remaining: number;
   running: boolean;
   label: string;
+  /** Absolute epoch ms when the timer hits zero (only while running). */
+  endsAt?: number;
 }
 
 export interface RestTimer {
@@ -25,6 +30,13 @@ export function useRestTimer(): RestTimer {
   const [timer, setTimer] = useState<TimerState | null>(null);
   const [open, setOpen] = useState(false);
   const intervalRef = useRef<number | null>(null);
+  const timerRef = useRef<TimerState | null>(null);
+  const firedRef = useRef(false);
+
+  // Mirror latest timer into a ref for event handlers / the visibility listener.
+  useEffect(() => {
+    timerRef.current = timer;
+  }, [timer]);
 
   const clear = () => {
     if (intervalRef.current !== null) {
@@ -33,15 +45,24 @@ export function useRestTimer(): RestTimer {
     }
   };
 
+  // Fire the end-of-rest alerts exactly once per rest period.
+  const fireFinish = (label: string) => {
+    if (firedRef.current) return;
+    firedRef.current = true;
+    beep();
+    navigator.vibrate?.([200, 100, 200]);
+    void notify(FINISH_TITLE, label);
+    void cancelScheduled();
+  };
+
   const tick = () => {
     setTimer((t) => {
-      if (!t) return t;
-      const rem = t.remaining - 1;
+      if (!t || !t.running) return t;
+      const rem = t.endsAt ? Math.round((t.endsAt - Date.now()) / 1000) : t.remaining - 1;
       if (rem <= 0) {
         clear();
-        beep();
-        navigator.vibrate?.([200, 100, 200]);
-        return { ...t, remaining: 0, running: false };
+        fireFinish(t.label);
+        return { ...t, remaining: 0, running: false, endsAt: undefined };
       }
       return { ...t, remaining: rem };
     });
@@ -52,41 +73,59 @@ export function useRestTimer(): RestTimer {
     intervalRef.current = window.setInterval(tick, 1000);
   };
 
-  const start = (sec: number, label?: string) => {
-    const s = sec || 60;
-    setTimer({ total: s, remaining: s, running: true, label: label || 'Descanso' });
-    setOpen(true);
+  // Start (or restart) a running countdown anchored to an absolute end time.
+  const arm = (sec: number, label: string, total: number) => {
+    const endsAt = Date.now() + sec * 1000;
+    firedRef.current = false;
+    setTimer({ total, remaining: sec, running: true, label, endsAt });
+    void scheduleNotification(FINISH_TITLE, label, endsAt);
     startInterval();
   };
 
+  const start = (sec: number, label?: string) => {
+    const s = sec || 60;
+    setOpen(true);
+    arm(s, label || 'Descanso', s);
+  };
+
   const pauseResume = () => {
-    if (!timer) return;
-    if (timer.running) {
+    const t = timerRef.current;
+    if (!t) return;
+    if (t.running) {
       clear();
-      setTimer({ ...timer, running: false });
+      const rem = t.endsAt ? Math.max(0, Math.round((t.endsAt - Date.now()) / 1000)) : t.remaining;
+      void cancelScheduled();
+      setTimer({ ...t, running: false, remaining: rem, endsAt: undefined });
     } else {
-      if (timer.remaining <= 0) return;
-      setTimer({ ...timer, running: true });
-      startInterval();
+      if (t.remaining <= 0) return;
+      arm(t.remaining, t.label, t.total);
     }
   };
 
   const addTime = (delta: number) => {
-    if (!timer) return;
-    const rem = Math.max(0, timer.remaining + delta);
-    setTimer({ ...timer, remaining: rem, total: Math.max(timer.total, rem) });
+    const t = timerRef.current;
+    if (!t) return;
+    const rem = Math.max(0, t.remaining + delta);
+    const total = Math.max(t.total, rem);
+    if (t.running) {
+      const endsAt = Date.now() + rem * 1000;
+      firedRef.current = false;
+      void scheduleNotification(FINISH_TITLE, t.label, endsAt);
+      setTimer({ ...t, remaining: rem, total, endsAt });
+    } else {
+      setTimer({ ...t, remaining: rem, total });
+    }
   };
 
   const reset = () => {
-    if (!timer) return;
-    setTimer({ ...timer, remaining: timer.total, running: true });
-    startInterval();
+    const t = timerRef.current;
+    if (!t) return;
+    arm(t.total, t.label, t.total);
   };
 
   const setPreset = (sec: number) => {
-    const label = timer?.label || 'Descanso';
-    setTimer({ total: sec, remaining: sec, running: true, label });
-    startInterval();
+    const label = timerRef.current?.label || 'Descanso';
+    arm(sec, label, sec);
   };
 
   const minimize = () => setOpen(false);
@@ -94,9 +133,30 @@ export function useRestTimer(): RestTimer {
 
   const close = () => {
     clear();
+    void cancelScheduled();
     setTimer(null);
     setOpen(false);
   };
+
+  // Re-sync when the tab/app returns to the foreground (intervals are throttled
+  // while backgrounded, so recompute from the absolute end time).
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      const t = timerRef.current;
+      if (!t || !t.running || !t.endsAt) return;
+      const rem = Math.round((t.endsAt - Date.now()) / 1000);
+      if (rem <= 0) {
+        clear();
+        fireFinish(t.label);
+        setTimer({ ...t, remaining: 0, running: false, endsAt: undefined });
+      } else {
+        setTimer({ ...t, remaining: rem });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   // clear interval on unmount
   useEffect(() => () => clear(), []);

@@ -15,6 +15,8 @@ export interface Exercise {
   restSeconds: number;
   videoUrl: string;
   weeks: WeekEntry[];
+  /** Exercises that share this id (and are adjacent) form a superset/biserie. */
+  supersetId?: string;
 }
 
 export interface Day {
@@ -29,9 +31,27 @@ export interface Routine {
   days: Day[];
 }
 
+/** A day-training session currently in progress. */
+export interface ActiveSession {
+  routineId: string;
+  routineName: string;
+  startedAt: number;
+}
+
+/** A completed day-training session. */
+export interface Session {
+  id: string;
+  routineId: string;
+  routineName: string;
+  startedAt: number;
+  endedAt: number;
+}
+
 export interface GymData {
   routines: Routine[];
   unit: Unit;
+  sessions: Session[];
+  active: ActiveSession | null;
 }
 
 export type Screen = 'home' | 'routine' | 'day';
@@ -46,7 +66,6 @@ export type ModalState =
       sets: number | string;
       reps: string;
       rest: number | string;
-      weeks: number | string;
     };
 
-export type ModalField = 'name' | 'sets' | 'reps' | 'rest' | 'weeks';
+export type ModalField = 'name' | 'sets' | 'reps' | 'rest';

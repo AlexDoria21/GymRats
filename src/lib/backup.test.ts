@@ -4,13 +4,22 @@ import { seed } from './seed';
 
 describe('backup', () => {
   it('round-trips build -> stringify -> parse', () => {
-    const data = { routines: seed(), unit: 'kg' as const };
+    const data = {
+      routines: seed(),
+      unit: 'kg' as const,
+      sessions: [
+        { id: 's1', routineId: 'r1', routineName: 'Rutina', startedAt: 1000, endedAt: 5000 },
+      ],
+      active: null,
+    };
     const text = JSON.stringify(buildBackup(data));
     const parsed = parseBackup(text);
     expect(parsed.unit).toBe('kg');
     expect(parsed.routines).toHaveLength(1);
     expect(parsed.routines[0].days).toHaveLength(3);
     expect(parsed.routines[0].days[0].exercises[0].name).toBe('Press de banca');
+    expect(parsed.sessions).toHaveLength(1);
+    expect(parsed.sessions[0].endedAt).toBe(5000);
   });
 
   it('throws on invalid JSON', () => {

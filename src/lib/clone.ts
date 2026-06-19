@@ -2,10 +2,11 @@ import { uid } from './id';
 import type { Day, Exercise, Routine } from '../types';
 
 /** Deep clone an exercise with fresh ids; checkmarks reset, weights kept. */
-function cloneExercise(e: Exercise): Exercise {
+function cloneExercise(e: Exercise, supersetId?: string): Exercise {
   return {
     ...e,
     id: uid(),
+    supersetId,
     weeks: e.weeks.map((w) => ({
       ...w,
       id: uid(),
@@ -15,7 +16,20 @@ function cloneExercise(e: Exercise): Exercise {
 }
 
 export function cloneDay(d: Day): Day {
-  return { id: uid(), name: d.name, exercises: d.exercises.map(cloneExercise) };
+  // remap superset ids so the copy has its own biserie groups
+  const idMap = new Map<string, string>();
+  const exercises = d.exercises.map((e) => {
+    let gid: string | undefined;
+    if (e.supersetId) {
+      gid = idMap.get(e.supersetId);
+      if (!gid) {
+        gid = uid();
+        idMap.set(e.supersetId, gid);
+      }
+    }
+    return cloneExercise(e, gid);
+  });
+  return { id: uid(), name: d.name, exercises };
 }
 
 export function cloneRoutine(r: Routine): Routine {

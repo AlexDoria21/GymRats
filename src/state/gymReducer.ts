@@ -5,7 +5,17 @@ import { seed } from '../lib/seed';
 import { convertWeight } from '../lib/convert';
 import { cloneDay, cloneRoutine } from '../lib/clone';
 import { youtubeSearch } from '../lib/format';
-import type { Day, Exercise, ModalField, ModalState, Routine, Screen, Unit } from '../types';
+import type {
+  ActiveSession,
+  Day,
+  Exercise,
+  ModalField,
+  ModalState,
+  Routine,
+  Screen,
+  Session,
+  Unit,
+} from '../types';
 
 export type DeleteKind = 'routine' | 'day' | 'exercise';
 
@@ -18,6 +28,9 @@ export interface ConfirmState {
 export interface GymState {
   routines: Routine[];
   unit: Unit;
+  sessions: Session[];
+  active: ActiveSession | null;
+  finishConfirmOpen: boolean;
   screen: Screen;
   routineId: string | null;
   dayId: string | null;
@@ -37,6 +50,10 @@ export type Action =
   | { type: 'SET_MODAL_FIELD'; field: ModalField; value: string }
   | { type: 'SET_WEIGHT'; exId: string; wkId: string; value: string }
   | { type: 'TOGGLE_SET'; exId: string; wkId: string; idx: number }
+  | { type: 'ADD_WEEK'; exId: string }
+  | { type: 'DELETE_WEEK'; exId: string; wkId: string }
+  | { type: 'LINK_SUPERSET'; exId: string }
+  | { type: 'UNLINK_SUPERSET'; exId: string }
   | { type: 'DELETE_ROUTINE'; id: string }
   | { type: 'DELETE_DAY'; id: string }
   | { type: 'DELETE_EXERCISE'; id: string }
@@ -47,7 +64,12 @@ export type Action =
   | { type: 'DUPLICATE_DAY'; id: string }
   | { type: 'REORDER_DAY'; activeId: string; overId: string }
   | { type: 'ADD_SUGGESTED_EXERCISE'; name: string }
-  | { type: 'IMPORT_DATA'; routines: Routine[]; unit: Unit }
+  | { type: 'IMPORT_DATA'; routines: Routine[]; unit: Unit; sessions: Session[] }
+  | { type: 'START_SESSION'; routineId: string; routineName: string }
+  | { type: 'REQUEST_FINISH_SESSION' }
+  | { type: 'CANCEL_FINISH_SESSION' }
+  | { type: 'FINISH_SESSION' }
+  | { type: 'CANCEL_SESSION' }
   | { type: 'OPEN_SETTINGS' }
   | { type: 'CLOSE_SETTINGS' }
   | { type: 'OPEN_CHART'; id: string }
@@ -61,6 +83,9 @@ export function initState(): GymState {
   return {
     routines,
     unit,
+    sessions: data?.sessions ?? [],
+    active: data?.active ?? null,
+    finishConfirmOpen: false,
     screen: 'home',
     routineId: null,
     dayId: null,
@@ -82,14 +107,8 @@ function draftExercise(s: GymState, exId: string): Exercise | undefined {
   return draftDay(s)?.exercises.find((e) => e.id === exId);
 }
 
-/** Build a fresh exercise with the given name and parameters. */
-function buildExercise(
-  name: string,
-  sets: number,
-  reps: string,
-  rest: number,
-  wkCount: number
-): Exercise {
+/** Build a fresh exercise with the given name and parameters (starts with 1 week). */
+function buildExercise(name: string, sets: number, reps: string, rest: number): Exercise {
   return {
     id: uid(),
     name,
@@ -97,12 +116,14 @@ function buildExercise(
     reps,
     restSeconds: rest,
     videoUrl: youtubeSearch(name),
-    weeks: Array.from({ length: wkCount }, (_, i) => ({
-      id: uid(),
-      label: 'Sem ' + (i + 1),
-      weight: 0,
-      doneSets: new Array(sets).fill(false),
-    })),
+    weeks: [
+      {
+        id: uid(),
+        label: 'Sem 1',
+        weight: 0,
+        doneSets: new Array(sets).fill(false),
+      },
+    ],
   };
 }
 
@@ -131,7 +152,6 @@ function applySaveModal(s: GymState): void {
   } else {
     const name = (m.name || '').trim() || 'Ejercicio';
     const sets = Math.max(1, parseInt(String(m.sets), 10) || 1);
-    const wkCount = Math.max(1, parseInt(String(m.weeks), 10) || 1);
     const rest = Math.max(5, parseInt(String(m.rest), 10) || 60);
     const reps = (m.reps || '').trim() || '8-12';
     const d = draftDay(s);
@@ -145,22 +165,13 @@ function applySaveModal(s: GymState): void {
       e.reps = reps;
       e.restSeconds = rest;
       e.videoUrl = youtubeSearch(name);
-      const old = e.weeks;
-      const weeks = [];
-      for (let i = 0; i < wkCount; i++) {
-        const prev = old[i];
-        const doneSets = prev ? prev.doneSets.slice(0, sets) : [];
-        while (doneSets.length < sets) doneSets.push(false);
-        weeks.push({
-          id: prev ? prev.id : uid(),
-          label: 'Sem ' + (i + 1),
-          weight: prev ? prev.weight : 0,
-          doneSets,
-        });
+      // keep existing weeks; only reconcile each week's doneSets length to the new set count
+      for (const w of e.weeks) {
+        w.doneSets = w.doneSets.slice(0, sets);
+        while (w.doneSets.length < sets) w.doneSets.push(false);
       }
-      e.weeks = weeks;
     } else {
-      d.exercises.push(buildExercise(name, sets, reps, rest, wkCount));
+      d.exercises.push(buildExercise(name, sets, reps, rest));
     }
   }
   s.modal = null;
@@ -236,6 +247,59 @@ export function reducer(state: GymState, action: Action): GymState {
         const w = draftExercise(d, action.exId)?.weeks.find((x) => x.id === action.wkId);
         if (w) w.doneSets[action.idx] = !w.doneSets[action.idx];
       });
+    case 'ADD_WEEK':
+      return produce(state, (d) => {
+        const e = draftExercise(d, action.exId);
+        if (!e) return;
+        const last = e.weeks[e.weeks.length - 1];
+        e.weeks.push({
+          id: uid(),
+          label: 'Sem ' + (e.weeks.length + 1),
+          weight: last ? last.weight : 0,
+          doneSets: new Array(e.sets).fill(false),
+        });
+      });
+    case 'DELETE_WEEK':
+      return produce(state, (d) => {
+        const e = draftExercise(d, action.exId);
+        if (!e) return;
+        const i = e.weeks.findIndex((w) => w.id === action.wkId);
+        if (i < 0) return;
+        e.weeks.splice(i, 1);
+        e.weeks.forEach((w, idx) => {
+          w.label = 'Sem ' + (idx + 1);
+        });
+      });
+    case 'LINK_SUPERSET':
+      return produce(state, (d) => {
+        const day = draftDay(d);
+        if (!day) return;
+        const i = day.exercises.findIndex((e) => e.id === action.exId);
+        if (i < 0 || i + 1 >= day.exercises.length) return;
+        const a = day.exercises[i];
+        const b = day.exercises[i + 1];
+        const oldA = a.supersetId;
+        const oldB = b.supersetId;
+        const gid = oldA ?? oldB ?? uid();
+        // merge any pre-existing groups of a/b into the shared id
+        for (const e of day.exercises) {
+          if (e.supersetId && (e.supersetId === oldA || e.supersetId === oldB)) e.supersetId = gid;
+        }
+        a.supersetId = gid;
+        b.supersetId = gid;
+      });
+    case 'UNLINK_SUPERSET':
+      return produce(state, (d) => {
+        const day = draftDay(d);
+        if (!day) return;
+        const e = day.exercises.find((x) => x.id === action.exId);
+        if (!e || !e.supersetId) return;
+        const gid = e.supersetId;
+        e.supersetId = undefined;
+        // a biserie needs >= 2 members; dissolve the group if only one is left
+        const rest = day.exercises.filter((x) => x.supersetId === gid);
+        if (rest.length < 2) for (const m of rest) m.supersetId = undefined;
+      });
     case 'DELETE_ROUTINE':
       return produce(state, (d) => deleteRoutineDraft(d, action.id));
     case 'DELETE_DAY':
@@ -285,13 +349,16 @@ export function reducer(state: GymState, action: Action): GymState {
       return produce(state, (d) => {
         const day = draftDay(d);
         if (!day) return;
-        day.exercises.push(buildExercise(action.name, 4, '8-12', 90, 4));
+        day.exercises.push(buildExercise(action.name, 4, '8-12', 90));
       });
     case 'IMPORT_DATA':
       return {
         ...state,
         routines: action.routines,
         unit: action.unit,
+        sessions: action.sessions,
+        active: null,
+        finishConfirmOpen: false,
         screen: 'home',
         routineId: null,
         dayId: null,
@@ -300,6 +367,39 @@ export function reducer(state: GymState, action: Action): GymState {
         confirm: null,
         settingsOpen: false,
       };
+    case 'START_SESSION':
+      if (state.active) return state;
+      return {
+        ...state,
+        active: {
+          routineId: action.routineId,
+          routineName: action.routineName,
+          startedAt: Date.now(),
+        },
+      };
+    case 'REQUEST_FINISH_SESSION':
+      return state.active ? { ...state, finishConfirmOpen: true } : state;
+    case 'CANCEL_FINISH_SESSION':
+      return { ...state, finishConfirmOpen: false };
+    case 'FINISH_SESSION': {
+      if (!state.active) return { ...state, finishConfirmOpen: false };
+      const a = state.active;
+      const session: Session = {
+        id: uid(),
+        routineId: a.routineId,
+        routineName: a.routineName,
+        startedAt: a.startedAt,
+        endedAt: Date.now(),
+      };
+      return {
+        ...state,
+        sessions: [...state.sessions, session],
+        active: null,
+        finishConfirmOpen: false,
+      };
+    }
+    case 'CANCEL_SESSION':
+      return state.active ? { ...state, active: null, finishConfirmOpen: false } : state;
     case 'OPEN_SETTINGS':
       return { ...state, settingsOpen: true };
     case 'CLOSE_SETTINGS':

@@ -1,5 +1,5 @@
 import { uid } from './id';
-import type { Day, Exercise, GymData, Routine, Unit, WeekEntry } from '../types';
+import type { Day, Exercise, GymData, Routine, Session, Unit, WeekEntry } from '../types';
 
 export interface BackupFile {
   app: 'rutinas-gym';
@@ -7,15 +7,17 @@ export interface BackupFile {
   exportedAt: string;
   unit: Unit;
   routines: Routine[];
+  sessions: Session[];
 }
 
 export function buildBackup(data: GymData): BackupFile {
   return {
     app: 'rutinas-gym',
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     unit: data.unit,
     routines: data.routines,
+    sessions: data.sessions,
   };
 }
 
@@ -49,6 +51,7 @@ function sanitizeExercise(raw: unknown): Exercise {
     restSeconds: Math.max(5, Math.round(toNumber(e.restSeconds, 60))),
     videoUrl: typeof e.videoUrl === 'string' ? e.videoUrl : '',
     weeks,
+    ...(typeof e.supersetId === 'string' ? { supersetId: e.supersetId } : {}),
   };
 }
 
@@ -70,6 +73,20 @@ function sanitizeRoutine(raw: unknown): Routine {
   };
 }
 
+function sanitizeSession(raw: unknown): Session | null {
+  const x = (raw ?? {}) as Record<string, unknown>;
+  const startedAt = toNumber(x.startedAt, NaN);
+  const endedAt = toNumber(x.endedAt, NaN);
+  if (!Number.isFinite(startedAt) || !Number.isFinite(endedAt)) return null;
+  return {
+    id: typeof x.id === 'string' ? x.id : uid(),
+    routineId: typeof x.routineId === 'string' ? x.routineId : '',
+    routineName: typeof x.routineName === 'string' ? x.routineName : 'Rutina',
+    startedAt,
+    endedAt,
+  };
+}
+
 /** Parse + sanitize a backup file. Throws on clearly invalid input. */
 export function parseBackup(text: string): GymData {
   let obj: unknown;
@@ -84,5 +101,8 @@ export function parseBackup(text: string): GymData {
   }
   const unit: Unit = o.unit === 'lb' ? 'lb' : 'kg';
   const routines = o.routines.map(sanitizeRoutine);
-  return { routines, unit };
+  const sessions = Array.isArray(o.sessions)
+    ? o.sessions.map(sanitizeSession).filter((s): s is Session => s !== null)
+    : [];
+  return { routines, unit, sessions, active: null };
 }

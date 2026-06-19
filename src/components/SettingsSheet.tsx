@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useGym } from '../state/GymContext';
 import { buildBackup, parseBackup } from '../lib/backup';
+import { notificationPermission, requestNotifications } from '../lib/notify';
 import { Dialog } from './Dialog';
 
 function downloadJson(filename: string, text: string) {
@@ -23,12 +24,36 @@ export function SettingsSheet() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [notifPerm, setNotifPerm] = useState(notificationPermission());
 
   if (!state.settingsOpen) return null;
 
+  const onEnableNotifs = async () => {
+    setError(null);
+    setDone(null);
+    const granted = await requestNotifications();
+    setNotifPerm(notificationPermission());
+    if (granted) setDone('Notificaciones de descanso activadas.');
+    else setError('No se pudieron activar las notificaciones (permiso denegado o no disponible).');
+  };
+
+  const notifText =
+    notifPerm === 'granted'
+      ? 'Activadas'
+      : notifPerm === 'denied'
+        ? 'Bloqueadas en el navegador'
+        : notifPerm === 'unsupported'
+          ? 'No disponibles en este dispositivo'
+          : 'Toca para activar';
+
   const onExport = () => {
     setError(null);
-    const backup = buildBackup({ routines: state.routines, unit: state.unit });
+    const backup = buildBackup({
+      routines: state.routines,
+      unit: state.unit,
+      sessions: state.sessions,
+      active: state.active,
+    });
     const date = new Date().toISOString().slice(0, 10);
     downloadJson(`rutinas-gym-${date}.json`, JSON.stringify(backup, null, 2));
     setDone('Copia de seguridad descargada.');
@@ -91,6 +116,27 @@ export function SettingsSheet() {
             }}
           />
         </div>
+
+        <div className="mt-5 mb-1 text-[18px] font-bold text-[#f3f3f4]">Notificaciones</div>
+        <div className="mb-3 text-[13px] text-[#82828a]">
+          Aviso "Descanso finalizado" al terminar el temporizador, aunque la app esté en segundo
+          plano.
+        </div>
+        <button
+          onClick={onEnableNotifs}
+          disabled={notifPerm === 'granted' || notifPerm === 'unsupported'}
+          className={
+            BTN + (notifPerm === 'granted' || notifPerm === 'unsupported' ? ' opacity-60' : '')
+          }
+        >
+          <span className="text-[20px]">🔔</span>
+          <span className="flex-1">
+            <span className="block text-[15px] font-semibold text-[#f3f3f4]">
+              Notificaciones de descanso
+            </span>
+            <span className="block text-[12.5px] text-[#82828a]">{notifText}</span>
+          </span>
+        </button>
 
         {error && (
           <div className="mt-3 rounded-[11px] border border-[#3a2422] bg-[#1a0f0d] p-3 text-[13px] text-[#ff6b5e]">

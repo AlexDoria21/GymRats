@@ -5,6 +5,27 @@ export function fmtTime(s: number): string {
   return m + ':' + (ss < 10 ? '0' : '') + ss;
 }
 
+/** Seconds -> human duration like "1h 23min", "45min" or "30s". */
+export function fmtDuration(s: number): string {
+  const sec = Math.max(0, Math.floor(s));
+  if (sec < 60) return `${sec}s`;
+  const m = Math.round(sec / 60);
+  if (m < 60) return `${m}min`;
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return mm ? `${h}h ${mm}min` : `${h}h`;
+}
+
+/** Seconds -> "h:mm:ss" (when >= 1h) or "m:ss" — for elapsed workout time. */
+export function fmtElapsed(s: number): string {
+  const sec = Math.max(0, Math.floor(s));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const ss = sec % 60;
+  const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
+  return h > 0 ? `${h}:${pad(m)}:${pad(ss)}` : `${m}:${pad(ss)}`;
+}
+
 /** Circumference of the timer ring (r = 52 => 2*pi*r). */
 export const RING_CIRCUMFERENCE = 326.7;
 

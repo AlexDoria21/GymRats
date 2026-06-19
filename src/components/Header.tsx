@@ -1,8 +1,41 @@
+import { useEffect, useState } from 'react';
 import { useGym } from '../state/GymContext';
-import { fmtTime } from '../lib/format';
+import { fmtElapsed, fmtTime } from '../lib/format';
+
+/** Live "time since the routine started" chip; tap to finish the session. */
+function SessionChip({ startedAt, onFinish }: { startedAt: number; onFinish: () => void }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const elapsed = Math.floor((now - startedAt) / 1000);
+
+  return (
+    <button
+      onClick={onFinish}
+      aria-label="Finalizar rutina"
+      title="Finalizar rutina"
+      className="flex flex-none items-center gap-1.5 rounded-[20px] border border-[#2b4a2f] bg-[#10210f] px-2.5 py-1.5 text-[13px] font-bold text-[#7ed08a] tabular-nums"
+    >
+      <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#4cd964]" />
+      {fmtElapsed(elapsed)}
+      <span className="text-[11px] font-semibold opacity-80">Finalizar</span>
+    </button>
+  );
+}
 
 export function Header() {
-  const { state, title, back, toggleUnit, openSettings, timer } = useGym();
+  const {
+    state,
+    title,
+    back,
+    toggleUnit,
+    openSettings,
+    timer,
+    startSession,
+    requestFinishSession,
+  } = useGym();
   const showChip = timer.timer && !timer.open;
 
   return (
@@ -21,6 +54,23 @@ export function Header() {
           {title}
         </div>
       </div>
+
+      {state.active ? (
+        <SessionChip startedAt={state.active.startedAt} onFinish={requestFinishSession} />
+      ) : (
+        state.screen === 'routine' && (
+          <button
+            onClick={startSession}
+            aria-label="Iniciar rutina"
+            className="flex flex-none cursor-pointer items-center gap-1.5 rounded-[20px] border border-[#2b4a2f] bg-[#10210f] px-3 py-1.5 text-[13px] font-bold text-[#7ed08a]"
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12">
+              <polygon points="2,1 11,6 2,11" fill="#7ed08a" />
+            </svg>
+            Iniciar
+          </button>
+        )
+      )}
 
       {showChip && timer.timer && (
         <button

@@ -17,10 +17,15 @@ html,
 body,
 #root {
   height: 100%;
+  /* stop the browser pull-to-refresh / scroll chaining that reloads the PWA */
+  overscroll-behavior: none;
 }
 body {
   margin: 0;
   background: #0d0d0f;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
 }
 * {
   box-sizing: border-box;

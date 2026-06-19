@@ -13,8 +13,8 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Rutinas Gym',
-        short_name: 'Rutinas Gym',
+        name: 'Gym Rats',
+        short_name: 'Gym Rats',
         description: 'Gestiona tus rutinas de gimnasio: días, ejercicios, cargas y descansos.',
         lang: 'es',
         theme_color: '#0d0d0f',

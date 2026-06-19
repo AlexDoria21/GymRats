@@ -1,6 +1,7 @@
 import { useGym } from '../../state/GymContext';
 import { PALETTE } from '../../lib/palette';
 import { EmptyHome, ListRow } from '../common';
+import { ActivityCalendar } from '../ActivityCalendar';
 
 export function HomeScreen() {
   const { state, openRoutine, openModal, duplicateRoutine, requestDelete } = useGym();
@@ -26,6 +27,11 @@ export function HomeScreen() {
       {state.routines.length === 0 && (
         <EmptyHome text="Crea tu primera rutina con el botón de abajo." />
       )}
+
+      <div className="mt-1 mb-1 px-0.5 text-[10.5px] tracking-[0.06em] text-[#5a5a61] uppercase">
+        Actividad
+      </div>
+      <ActivityCalendar />
     </div>
   );
 }
