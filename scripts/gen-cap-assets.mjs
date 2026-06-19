@@ -1,37 +1,36 @@
 import sharp from 'sharp';
 import { mkdirSync } from 'node:fs';
+import { markSvgBody } from './mark.mjs';
 
-// Source images for @capacitor/assets (Android launcher icons + splash).
-// Reuses the "GR" monogram from the PWA icons.
+// Source images for @capacitor/assets (Android launcher icons + splash),
+// built from the Gym Rats dumbbell vector mark.
 
-const ACCENT = '#3d9bff';
 const INK = '#0d0d0f';
 
 mkdirSync('assets', { recursive: true });
 
-// Full-bleed icon (accent background + centered GR). Used for legacy + adaptive.
-const icon = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" fill="${ACCENT}"/>
-  <text x="512" y="512" fill="${INK}"
-    font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
-    font-size="420" font-weight="700" letter-spacing="-16"
-    text-anchor="middle" dominant-baseline="central">GR</text>
+// Dark canvas with the centered mark scaled to `inner` of the frame.
+const canvas = (size, inner) => {
+  const pad = (1 - inner) / 2;
+  const t = 512 * pad;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="${INK}"/>
+  <g transform="translate(${t} ${t}) scale(${inner})">
+    ${markSvgBody()}
+  </g>
 </svg>`;
+};
 
-// Splash: dark background with a smaller centered GR mark.
-const splash = `<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732">
-  <rect width="2732" height="2732" fill="${INK}"/>
-  <rect x="1146" y="1146" width="440" height="440" rx="96" fill="${ACCENT}"/>
-  <text x="1366" y="1366" fill="${INK}"
-    font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
-    font-size="200" font-weight="700" letter-spacing="-8"
-    text-anchor="middle" dominant-baseline="central">GR</text>
-</svg>`;
+async function render(svg, size, out) {
+  await sharp(Buffer.from(svg)).resize(size, size).png().toFile(out);
+}
 
 async function run() {
-  await sharp(Buffer.from(icon)).resize(1024, 1024).png().toFile('assets/icon.png');
-  await sharp(Buffer.from(splash)).resize(2732, 2732).png().toFile('assets/splash.png');
-  await sharp(Buffer.from(splash)).resize(2732, 2732).png().toFile('assets/splash-dark.png');
+  // Full-bleed launcher icon (mark inside the ~66% adaptive safe zone).
+  await render(canvas(512, 0.6), 1024, 'assets/icon.png');
+  // Splash: small centered mark on a large dark canvas.
+  await render(canvas(512, 0.22), 2732, 'assets/splash.png');
+  await render(canvas(512, 0.22), 2732, 'assets/splash-dark.png');
   console.log('capacitor source assets generated in assets/');
 }
 run();
