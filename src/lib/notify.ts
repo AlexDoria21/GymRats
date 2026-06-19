@@ -1,13 +1,25 @@
-// Local notifications for the rest timer. Best-effort: shown via the service
-// worker when one is active (allows display while the page is backgrounded),
-// with a plain Notification fallback. On platforms that support Notification
-// Triggers (Chrome/Android) we also schedule the alert at an absolute time so
-// it fires even with the screen locked; elsewhere it shows when JS runs again.
+// Notifications for the rest timer and the day-session reminder.
+//
+// Two backends:
+//  - Native (Capacitor APK): @capacitor/local-notifications — fires real Android
+//    notifications scheduled at an absolute time, even with the screen locked or
+//    the app closed. This is the reliable path on the phone.
+//  - Web (browser/PWA): the Web Notification API, shown via the service worker,
+//    and scheduled with Notification Triggers where supported (Chrome/Android).
+
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 const ICON = '/pwa-192x192.png';
 const BADGE = '/maskable-512x512.png';
 const TAG = 'rest-timer';
 const SESSION_TAG = 'day-session';
+const REST_ID = 1001;
+const SESSION_ID = 1002;
+
+const native = Capacitor.isNativePlatform();
+
+export type PermState = 'granted' | 'denied' | 'prompt' | 'unsupported';
 
 interface RestNotificationOptions extends NotificationOptions {
   vibrate?: number[];
@@ -16,26 +28,78 @@ interface RestNotificationOptions extends NotificationOptions {
 }
 
 export function canNotify(): boolean {
+  if (native) return true;
   return typeof window !== 'undefined' && 'Notification' in window;
 }
 
-export function notificationPermission(): NotificationPermission | 'unsupported' {
-  return canNotify() ? Notification.permission : 'unsupported';
+/** Current permission state (async — the native plugin checks asynchronously). */
+export async function getPermission(): Promise<PermState> {
+  if (native) {
+    try {
+      const r = await LocalNotifications.checkPermissions();
+      return (r.display as PermState) ?? 'prompt';
+    } catch {
+      return 'unsupported';
+    }
+  }
+  if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+  const p = Notification.permission;
+  return p === 'default' ? 'prompt' : p;
 }
 
 export async function requestNotifications(): Promise<boolean> {
+  if (native) {
+    try {
+      const r = await LocalNotifications.requestPermissions();
+      return r.display === 'granted';
+    } catch {
+      return false;
+    }
+  }
   if (!canNotify()) return false;
   try {
-    const res = await Notification.requestPermission();
-    return res === 'granted';
+    return (await Notification.requestPermission()) === 'granted';
   } catch {
     return false;
   }
 }
 
+/** Ask once if the user hasn't decided yet (call inside a user gesture). */
+export async function ensureNotifyPermission(): Promise<void> {
+  if (!canNotify()) return;
+  if ((await getPermission()) === 'prompt') await requestNotifications();
+}
+
+// --- native (Capacitor) helpers ---
+async function nativeSchedule(id: number, title: string, body: string, atMs?: number) {
+  try {
+    if ((await LocalNotifications.checkPermissions()).display !== 'granted') return;
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id,
+          title,
+          body,
+          schedule: atMs ? { at: new Date(atMs), allowWhileIdle: true } : undefined,
+        },
+      ],
+    });
+  } catch {
+    /* ignore */
+  }
+}
+async function nativeCancel(id: number) {
+  try {
+    await LocalNotifications.cancel({ notifications: [{ id }] });
+  } catch {
+    /* ignore */
+  }
+}
+
+// --- web (service worker) helpers ---
 /** Active service worker registration, or null (e.g. in dev where there is no SW). */
 async function activeReg(): Promise<ServiceWorkerRegistration | null> {
-  if (!('serviceWorker' in navigator)) return null;
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return null;
   try {
     const reg = await navigator.serviceWorker.getRegistration();
     return reg && reg.active ? reg : null;
@@ -44,8 +108,21 @@ async function activeReg(): Promise<ServiceWorkerRegistration | null> {
   }
 }
 
-/** Show the notification right now (when the timer reaches zero with JS running). */
+async function cancelByTag(tag: string): Promise<void> {
+  const reg = await activeReg();
+  if (!reg) return;
+  try {
+    const filter = { tag, includeTriggered: false } as unknown as GetNotificationOptions;
+    const list = await reg.getNotifications(filter);
+    for (const n of list) n.close();
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Show the notification right now (web only; on native the scheduled one fires). */
 export async function notify(title: string, body: string): Promise<void> {
+  if (native) return; // the OS-scheduled notification handles display
   if (!canNotify() || Notification.permission !== 'granted') return;
   const options: RestNotificationOptions = {
     body,
@@ -64,12 +141,16 @@ export async function notify(title: string, body: string): Promise<void> {
   }
 }
 
-/** Schedule the alert at an absolute time via Notification Triggers, where supported. */
+/** Schedule the rest-finished alert at an absolute time. */
 export async function scheduleNotification(
   title: string,
   body: string,
   atMs: number
 ): Promise<void> {
+  if (native) {
+    await nativeSchedule(REST_ID, title, body, atMs);
+    return;
+  }
   if (!canNotify() || Notification.permission !== 'granted') return;
   if (!('TimestampTrigger' in window)) return;
   const reg = await activeReg();
@@ -90,29 +171,18 @@ export async function scheduleNotification(
   }
 }
 
-/** Cancel any pending/shown notification with the given tag. */
-async function cancelByTag(tag: string): Promise<void> {
-  const reg = await activeReg();
-  if (!reg) return;
-  try {
-    const filter = { tag, includeTriggered: false } as unknown as GetNotificationOptions;
-    const list = await reg.getNotifications(filter);
-    for (const n of list) n.close();
-  } catch {
-    /* ignore */
-  }
-}
-
 /** Cancel any pending/shown rest-timer notification (on pause/reset/close). */
 export function cancelScheduled(): Promise<void> {
+  if (native) return nativeCancel(REST_ID);
   return cancelByTag(TAG);
 }
 
-/**
- * Schedule the "you forgot to finish your routine" reminder at an absolute time
- * (best-effort, via Notification Triggers where supported).
- */
+/** Schedule the "you forgot to finish your routine" reminder at an absolute time. */
 export async function scheduleSessionReminder(atMs: number, body: string): Promise<void> {
+  if (native) {
+    await nativeSchedule(SESSION_ID, '¿Rutina terminada?', body, atMs);
+    return;
+  }
   if (!canNotify() || Notification.permission !== 'granted') return;
   if (!('TimestampTrigger' in window)) return;
   const reg = await activeReg();
@@ -135,5 +205,6 @@ export async function scheduleSessionReminder(atMs: number, body: string): Promi
 
 /** Cancel the pending day-session reminder (on finish/cancel). */
 export function cancelSessionReminder(): Promise<void> {
+  if (native) return nativeCancel(SESSION_ID);
   return cancelByTag(SESSION_TAG);
 }

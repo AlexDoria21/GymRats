@@ -3,9 +3,8 @@ import type { ReactNode } from 'react';
 import { saveData } from '../lib/storage';
 import { openVideo } from '../lib/format';
 import {
-  canNotify,
   cancelSessionReminder,
-  requestNotifications,
+  ensureNotifyPermission,
   scheduleSessionReminder,
 } from '../lib/notify';
 import type { Day, Exercise, GymData, ModalField, ModalState, Routine } from '../types';
@@ -77,7 +76,7 @@ export function GymProvider({ children }: { children: ReactNode }) {
   // Ask for notification permission the first time a rest timer is started
   // (runs inside a user gesture: marking a set / tapping the rest button).
   const maybeAskNotify = () => {
-    if (canNotify() && Notification.permission === 'default') void requestNotifications();
+    void ensureNotifyPermission();
   };
 
   // persist data whenever routines, unit, sessions or the active session change

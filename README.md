@@ -123,6 +123,11 @@ el menú usa el Java embebido automáticamente, sin el paso 3.)
   vuelve a aplicar el cambio.
 - **Iconos y splash** del APK (logo "GR"): `npm run cap:assets`
   (fuente en `scripts/gen-cap-assets.mjs` → `assets/`).
+- **Notificaciones:** en el APK se usan **notificaciones nativas** (`@capacitor/local-notifications`),
+  no la API web (que no existe dentro del WebView). La primera vez que actives el descanso o
+  toques *Ajustes → Notificaciones*, Android pedirá permiso (Android 13+). Si dice
+  "Bloqueadas", actívalas en *Ajustes del sistema → Apps → Gym Rats → Notificaciones*.
+  `src/lib/notify.ts` elige automáticamente backend nativo (APK) o web (navegador/PWA).
 - El `app-debug.apk` está firmado con la clave de **depuración**: sirve para uso personal.
   Para publicar en Google Play hace falta un **AAB firmado en modo release** (otra clave).
 

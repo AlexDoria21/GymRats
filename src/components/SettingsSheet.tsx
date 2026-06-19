@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useGym } from '../state/GymContext';
 import { buildBackup, parseBackup } from '../lib/backup';
-import { notificationPermission, requestNotifications } from '../lib/notify';
+import { getPermission, requestNotifications, type PermState } from '../lib/notify';
 import { Dialog } from './Dialog';
 
 function downloadJson(filename: string, text: string) {
@@ -24,7 +24,12 @@ export function SettingsSheet() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
-  const [notifPerm, setNotifPerm] = useState(notificationPermission());
+  const [notifPerm, setNotifPerm] = useState<PermState>('prompt');
+
+  // Load the current notification permission whenever the sheet opens.
+  useEffect(() => {
+    if (state.settingsOpen) void getPermission().then(setNotifPerm);
+  }, [state.settingsOpen]);
 
   if (!state.settingsOpen) return null;
 
@@ -32,7 +37,7 @@ export function SettingsSheet() {
     setError(null);
     setDone(null);
     const granted = await requestNotifications();
-    setNotifPerm(notificationPermission());
+    setNotifPerm(await getPermission());
     if (granted) setDone('Notificaciones de descanso activadas.');
     else setError('No se pudieron activar las notificaciones (permiso denegado o no disponible).');
   };
@@ -41,7 +46,7 @@ export function SettingsSheet() {
     notifPerm === 'granted'
       ? 'Activadas'
       : notifPerm === 'denied'
-        ? 'Bloqueadas en el navegador'
+        ? 'Bloqueadas (actívalas en Ajustes del sistema)'
         : notifPerm === 'unsupported'
           ? 'No disponibles en este dispositivo'
           : 'Toca para activar';
