@@ -2,6 +2,7 @@ import { ConfirmDialog } from './components/ConfirmDialog';
 import { FinishSessionDialog } from './components/FinishSessionDialog';
 import { Fab } from './components/Fab';
 import { Header } from './components/Header';
+import { HelpSheet } from './components/HelpSheet';
 import { Modal } from './components/Modal';
 import { ProgressSheet } from './components/ProgressSheet';
 import { RestTimer } from './components/RestTimer';
@@ -14,7 +15,7 @@ import { GymProvider, useGym } from './state/GymContext';
 function Shell() {
   const { state } = useGym();
   return (
-    <div className="relative mx-auto flex h-full max-w-[480px] flex-col overflow-hidden bg-[#0d0d0f] font-[Helvetica_Neue,Helvetica,system-ui,Arial,sans-serif] text-[#f3f3f4]">
+    <div className="relative mx-auto flex h-full max-w-[480px] flex-col overflow-hidden bg-bg font-sans text-ink">
       <Header />
       <div className="flex-1 overflow-y-auto overscroll-contain">
         {state.screen === 'home' && <HomeScreen />}
@@ -27,6 +28,7 @@ function Shell() {
       <SettingsSheet />
       <ConfirmDialog />
       <FinishSessionDialog />
+      <HelpSheet />
       <RestTimer />
     </div>
   );

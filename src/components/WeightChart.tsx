@@ -47,8 +47,12 @@ export function WeightChart({ points, unit }: Props) {
     >
       <defs>
         <linearGradient id="wc-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3d9bff" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#3d9bff" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--color-blaze)" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="var(--color-blaze)" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="wc-stroke" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="var(--color-blaze)" />
+          <stop offset="100%" stopColor="var(--color-blaze-2)" />
         </linearGradient>
       </defs>
 
@@ -58,7 +62,7 @@ export function WeightChart({ points, unit }: Props) {
         y1={PAD_T + innerH}
         x2={PAD_L + innerW}
         y2={PAD_T + innerH}
-        stroke="#26262b"
+        stroke="var(--color-line)"
         strokeWidth="1"
       />
 
@@ -67,7 +71,7 @@ export function WeightChart({ points, unit }: Props) {
         <polyline
           points={linePath}
           fill="none"
-          stroke="#3d9bff"
+          stroke="url(#wc-stroke)"
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -76,7 +80,14 @@ export function WeightChart({ points, unit }: Props) {
 
       {coords.map((c, i) => (
         <g key={i}>
-          <circle cx={c.cx} cy={c.cy} r="3.5" fill="#3d9bff" stroke="#0d0d0f" strokeWidth="1.5" />
+          <circle
+            cx={c.cx}
+            cy={c.cy}
+            r="3.5"
+            fill="var(--color-blaze)"
+            stroke="var(--color-bg)"
+            strokeWidth="1.5"
+          />
           {c.value > 0 && (
             <text
               x={c.cx}
@@ -84,18 +95,18 @@ export function WeightChart({ points, unit }: Props) {
               textAnchor="middle"
               fontSize="10"
               fontWeight="700"
-              fill="#e6e6ea"
+              fill="var(--color-ink)"
             >
               {c.value}
             </text>
           )}
-          <text x={c.cx} y={H - 9} textAnchor="middle" fontSize="9.5" fill="#5f5f66">
+          <text x={c.cx} y={H - 9} textAnchor="middle" fontSize="9.5" fill="var(--color-faint)">
             {c.label}
           </text>
         </g>
       ))}
 
-      <text x={PAD_L} y={13} fontSize="9.5" fill="#5a5a61">
+      <text x={PAD_L} y={13} fontSize="9.5" fill="var(--color-faint)">
         {unit}
       </text>
     </svg>

@@ -1,13 +1,18 @@
 import { useGym } from '../../state/GymContext';
 import { PALETTE } from '../../lib/palette';
-import { EmptyHome, ListRow } from '../common';
+import { EmptyState, ListRow } from '../common';
 import { ActivityCalendar } from '../ActivityCalendar';
+import { StatBand } from '../StatBand';
 
 export function HomeScreen() {
   const { state, openRoutine, openModal, duplicateRoutine, requestDelete } = useGym();
+  const hasRoutines = state.routines.length > 0;
 
   return (
     <div className="flex flex-col gap-3 px-4 pt-4 pb-2">
+      <StatBand />
+
+      <div className="eyebrow mt-2 px-0.5">Rutinas</div>
       {state.routines.map((r, i) => {
         const exercises = r.days.reduce((a, d) => a + d.exercises.length, 0);
         const meta = `${r.days.length} días · ${exercises} ejercicios`;
@@ -24,13 +29,21 @@ export function HomeScreen() {
           />
         );
       })}
-      {state.routines.length === 0 && (
-        <EmptyHome text="Crea tu primera rutina con el botón de abajo." />
+      {!hasRoutines && (
+        <EmptyState
+          title="Crea tu primera rutina"
+          body="Una rutina organiza tu entrenamiento en tres niveles. Así se arma:"
+          steps={[
+            'Crea una rutina (p. ej. Hipertrofia)',
+            'Añade días: Push, Pull, Legs…',
+            'Añade ejercicios con series y cargas',
+          ]}
+          ctaLabel="＋  Crear rutina"
+          onCta={() => openModal({ type: 'routine', name: '' })}
+        />
       )}
 
-      <div className="mt-1 mb-1 px-0.5 text-[10.5px] tracking-[0.06em] text-[#5a5a61] uppercase">
-        Actividad
-      </div>
+      <div className="eyebrow mt-3 px-0.5">Actividad</div>
       <ActivityCalendar />
     </div>
   );

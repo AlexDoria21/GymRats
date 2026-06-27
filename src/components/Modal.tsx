@@ -1,9 +1,9 @@
 import { useGym } from '../state/GymContext';
 import { Dialog } from './Dialog';
 
-const LABEL = 'mt-4 mb-1.5 block text-[10.5px] tracking-[0.06em] text-[#5f5f66] uppercase';
+const LABEL = 'eyebrow mt-4 mb-1.5 block';
 const INPUT =
-  'w-full rounded-[11px] border border-[#2a2a2e] bg-[#0d0d0f] p-[13px] text-[15px] text-[#f3f3f4] outline-none';
+  'w-full rounded-[11px] border border-line bg-bg p-[13px] text-[15px] font-medium text-ink outline-none focus:border-line-2';
 
 const NAME_PLACEHOLDER: Record<string, string> = {
   routine: 'Ej. Hipertrofia · Mes 1',
@@ -34,9 +34,9 @@ export function Modal() {
 
   return (
     <Dialog onClose={closeModal} ariaLabel={`${verb}${noun}`} z="z-20" backdrop="bg-black/60">
-      <div className="w-full max-w-[480px] animate-[sheetUp_.24s_cubic-bezier(.2,.8,.2,1)] rounded-t-3xl border border-b-0 border-[#2a2a2e] bg-[#161618] px-[18px] pt-[14px] pb-6">
-        <div className="mx-auto mb-4 h-1 w-[38px] rounded-[3px] bg-[#2f2f35]" />
-        <div className="mb-1.5 text-[18px] font-bold text-[#f3f3f4]">
+      <div className="sheet px-[18px] pt-[14px] pb-6">
+        <div className="grabber" />
+        <div className="display mb-2 text-[22px] text-ink">
           {verb}
           {noun}
         </div>
@@ -51,10 +51,10 @@ export function Modal() {
                   type="button"
                   onClick={() => setModalField('name', preset)}
                   className={
-                    'cursor-pointer rounded-full border px-3 py-1.5 text-[12.5px] font-medium ' +
+                    'cursor-pointer rounded-full border px-3 py-1.5 text-[12.5px] font-semibold ' +
                     (active
-                      ? 'border-[#3d9bff] bg-[#3d9bff] text-[#06121f]'
-                      : 'border-[#2a2a2e] bg-[#0d0d0f] text-[#b3b3ba]')
+                      ? 'blaze-fill border-transparent text-[#2a0710]'
+                      : 'border-line bg-bg text-ink-2')
                   }
                 >
                   {preset}
@@ -110,16 +110,10 @@ export function Modal() {
         )}
 
         <div className="mt-[22px] flex gap-2.5">
-          <button
-            onClick={closeModal}
-            className="flex-1 cursor-pointer rounded-xl border border-[#2a2a2e] bg-transparent p-[14px] text-[15px] font-semibold text-[#b3b3ba]"
-          >
+          <button onClick={closeModal} className="btn btn-ghost flex-1">
             Cancelar
           </button>
-          <button
-            onClick={saveModal}
-            className="flex-1 cursor-pointer rounded-xl border-none bg-[#3d9bff] p-[14px] text-[15px] font-bold text-[#06121f]"
-          >
+          <button onClick={saveModal} className="btn btn-primary flex-1">
             Guardar
           </button>
         </div>

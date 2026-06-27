@@ -74,13 +74,13 @@ export function ActivityCalendar() {
   ];
 
   return (
-    <div className="rounded-2xl border border-[#26262b] bg-[#161618] p-4">
+    <div className="rounded-2xl border border-line bg-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-semibold text-[#f3f3f4]">
+          <div className="text-[15px] font-bold text-ink capitalize">
             {MONTHS[view.m]} {view.y}
           </div>
-          <div className="text-[12px] text-[#82828a]">
+          <div className="text-[12px] font-medium text-muted">
             {monthCount === 0
               ? 'Sin entrenamientos este mes'
               : `${monthCount} día${monthCount === 1 ? '' : 's'} entrenado${monthCount === 1 ? '' : 's'}`}
@@ -88,27 +88,27 @@ export function ActivityCalendar() {
         </div>
         <button
           onClick={goToday}
-          className="cursor-pointer rounded-[9px] border border-[#2a2a2e] bg-[#0d0d0f] px-2.5 py-1.5 text-[12px] font-medium text-[#b3b3ba]"
+          className="cursor-pointer rounded-[9px] border border-line bg-bg px-2.5 py-1.5 text-[12px] font-semibold text-ink-2"
         >
           Hoy
         </button>
         <button
           onClick={() => shift(-1)}
           aria-label="Mes anterior"
-          className="flex h-[32px] w-[32px] flex-none cursor-pointer items-center justify-center rounded-[9px] border border-[#2a2a2e] bg-[#0d0d0f] pb-[2px] text-lg leading-none text-[#cfcfd4]"
+          className="flex h-[32px] w-[32px] flex-none cursor-pointer items-center justify-center rounded-[9px] border border-line bg-bg pb-[2px] text-lg leading-none text-ink-2"
         >
           ‹
         </button>
         <button
           onClick={() => shift(1)}
           aria-label="Mes siguiente"
-          className="flex h-[32px] w-[32px] flex-none cursor-pointer items-center justify-center rounded-[9px] border border-[#2a2a2e] bg-[#0d0d0f] pb-[2px] text-lg leading-none text-[#cfcfd4]"
+          className="flex h-[32px] w-[32px] flex-none cursor-pointer items-center justify-center rounded-[9px] border border-line bg-bg pb-[2px] text-lg leading-none text-ink-2"
         >
           ›
         </button>
       </div>
 
-      <div className="mb-1.5 grid grid-cols-7 gap-1 text-center text-[10.5px] font-semibold tracking-[0.04em] text-[#5a5a61]">
+      <div className="mb-1.5 grid grid-cols-7 gap-1 text-center text-[10.5px] font-bold tracking-[0.06em] text-faint uppercase">
         {WEEKDAYS.map((w) => (
           <div key={w}>{w}</div>
         ))}
@@ -127,13 +127,17 @@ export function ActivityCalendar() {
               onClick={() => setSelected((cur) => (cur === k ? null : k))}
               className={
                 'relative flex aspect-square cursor-pointer items-center justify-center rounded-[9px] text-[13px] ' +
-                (done ? 'bg-[#13351a] font-bold text-[#7ed08a]' : 'font-medium text-[#9a9aa2]') +
-                (isSel ? ' ring-2 ring-[#4cd964]' : isToday ? ' ring-1 ring-[#3d9bff]' : '')
+                (done ? 'bg-[#2a0f16] font-bold text-blaze' : 'font-medium text-ink-2') +
+                (isSel
+                  ? ' ring-2 ring-[var(--color-blaze-2)]'
+                  : isToday
+                    ? ' ring-1 ring-blaze'
+                    : '')
               }
             >
               {d}
               {done && (
-                <span className="absolute bottom-[5px] inline-block h-[4px] w-[4px] rounded-full bg-[#4cd964]" />
+                <span className="blaze-fill absolute bottom-[5px] inline-block h-[4px] w-[4px] rounded-full" />
               )}
             </button>
           );
@@ -141,16 +145,16 @@ export function ActivityCalendar() {
       </div>
 
       {selDate && (
-        <div className="mt-3 rounded-[11px] border border-[#26262b] bg-[#0d0d0f] p-3 text-[13px]">
-          <span className="font-semibold text-[#cfcfd4] capitalize">{selLabel}</span>
+        <div className="mt-3 rounded-[11px] border border-line bg-bg p-3 text-[13px]">
+          <span className="font-bold text-ink capitalize">{selLabel}</span>
           {selInfo ? (
-            <span className="text-[#82828a]">
+            <span className="text-muted">
               {' · '}
-              <span className="font-semibold text-[#7ed08a]">{fmtDuration(selInfo.totalSec)}</span>
+              <span className="font-bold text-blaze">{fmtDuration(selInfo.totalSec)}</span>
               {selInfo.count > 1 ? ` · ${selInfo.count} sesiones` : ''}
             </span>
           ) : (
-            <span className="text-[#82828a]"> · Sin entrenamiento</span>
+            <span className="text-muted"> · Sin entrenamiento</span>
           )}
         </div>
       )}

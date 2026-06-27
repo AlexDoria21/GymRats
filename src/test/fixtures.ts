@@ -1,4 +1,4 @@
-import { uid } from './id';
+import { uid } from '../lib/id';
 import type { Exercise, Routine } from '../types';
 
 function mk(
@@ -26,7 +26,8 @@ function mk(
   };
 }
 
-export function seed(): Routine[] {
+/** Sample routines used only by unit tests as fixture data. */
+export function sampleRoutines(): Routine[] {
   return [
     {
       id: uid(),

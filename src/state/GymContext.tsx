@@ -50,6 +50,8 @@ interface GymContextValue {
   importData: (data: GymData) => void;
   openSettings: () => void;
   closeSettings: () => void;
+  openHelp: () => void;
+  closeHelp: () => void;
 
   startSession: () => void;
   requestFinishSession: () => void;
@@ -159,6 +161,8 @@ export function GymProvider({ children }: { children: ReactNode }) {
       }),
     openSettings: () => dispatch({ type: 'OPEN_SETTINGS' }),
     closeSettings: () => dispatch({ type: 'CLOSE_SETTINGS' }),
+    openHelp: () => dispatch({ type: 'OPEN_HELP' }),
+    closeHelp: () => dispatch({ type: 'CLOSE_HELP' }),
 
     startSession: () => {
       if (state.active || !currentRoutine) return;

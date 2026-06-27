@@ -17,7 +17,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useGym } from '../../state/GymContext';
 import { PALETTE } from '../../lib/palette';
 import type { Day } from '../../types';
-import { EmptyText, ListRow } from '../common';
+import { EmptyState, ListRow } from '../common';
 
 function GripIcon() {
   return (
@@ -44,7 +44,7 @@ function SortableDay({ day, accent }: { day: Day; accent: string }) {
       {...listeners}
       aria-label={`Reordenar ${day.name}`}
       title="Arrastra para reordenar"
-      className="flex h-[34px] w-[26px] flex-none cursor-grab touch-none items-center justify-center rounded-[8px] text-[#6a6a72] active:cursor-grabbing"
+      className="flex h-[34px] w-[26px] flex-none cursor-grab touch-none items-center justify-center rounded-[8px] text-faint active:cursor-grabbing"
     >
       <GripIcon />
     </button>
@@ -68,7 +68,7 @@ function SortableDay({ day, accent }: { day: Day; accent: string }) {
 }
 
 export function RoutineScreen() {
-  const { currentRoutine, reorderDay } = useGym();
+  const { currentRoutine, reorderDay, openModal } = useGym();
   const r = currentRoutine;
   const days = r?.days ?? [];
   const subtitle = r ? `${days.length}${days.length === 1 ? ' día' : ' días'}` : '';
@@ -85,9 +85,7 @@ export function RoutineScreen() {
 
   return (
     <div className="flex flex-col gap-3 px-4 pt-4 pb-2">
-      <div className="px-0.5 pb-0.5 text-xs tracking-[0.07em] text-[#5f5f66] uppercase">
-        {subtitle}
-      </div>
+      <div className="eyebrow px-0.5">{subtitle}</div>
       {days.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={days.map((d) => d.id)} strategy={verticalListSortingStrategy}>
@@ -97,8 +95,18 @@ export function RoutineScreen() {
           </SortableContext>
         </DndContext>
       )}
+      {days.length > 1 && (
+        <div className="px-0.5 text-[12px] font-medium text-faint">
+          Mantén pulsado ⠿ y arrastra para reordenar los días.
+        </div>
+      )}
       {days.length === 0 && (
-        <EmptyText text="Agrega los días de esta rutina (Push, Pull, Legs...)." />
+        <EmptyState
+          title="Añade tus días"
+          body="Cada día agrupa los ejercicios de una sesión. Crea uno por grupo muscular o patrón: Push, Pull, Legs…"
+          ctaLabel="＋  Agregar día"
+          onCta={() => openModal({ type: 'day', name: '' })}
+        />
       )}
     </div>
   );

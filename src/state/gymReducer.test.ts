@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { reducer } from './gymReducer';
 import type { GymState } from './gymReducer';
-import { seed } from '../lib/seed';
+import { sampleRoutines } from '../test/fixtures';
 
 function base(): GymState {
   return {
-    routines: seed(),
+    routines: sampleRoutines(),
     unit: 'kg',
     sessions: [],
     active: null,
@@ -17,6 +17,7 @@ function base(): GymState {
     chartExId: null,
     confirm: null,
     settingsOpen: false,
+    helpOpen: false,
   };
 }
 
