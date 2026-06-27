@@ -6,7 +6,13 @@ const DAY = 24 * 60 * 60 * 1000;
 const NOW = new Date(2026, 5, 26, 12, 0, 0).getTime(); // fixed noon
 
 function session(endedAt: number): Session {
-  return { id: String(endedAt), routineId: 'r', routineName: 'R', startedAt: endedAt - 3600_000, endedAt };
+  return {
+    id: String(endedAt),
+    routineId: 'r',
+    routineName: 'R',
+    startedAt: endedAt - 3600_000,
+    endedAt,
+  };
 }
 
 describe('weeklyCount', () => {

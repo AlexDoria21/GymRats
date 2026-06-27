@@ -50,9 +50,7 @@ export function DayScreen() {
           title="Añade ejercicios"
           body="Cada ejercicio guarda sus series, reps y descanso. Anota la carga de cada semana y marca las series al completarlas."
           ctaLabel="＋  Agregar ejercicio"
-          onCta={() =>
-            openModal({ type: 'exercise', name: '', sets: 4, reps: '8-12', rest: 90 })
-          }
+          onCta={() => openModal({ type: 'exercise', name: '', sets: 4, reps: '8-12', rest: 90 })}
         />
       )}
 

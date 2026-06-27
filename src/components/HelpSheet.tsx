@@ -86,7 +86,10 @@ export function HelpSheet() {
             title="Biseries"
             body="En un ejercicio, enlázalo con el siguiente para entrenarlos sin descanso intermedio."
           />
-          <Tip title="Progreso" body="Toca el icono 📈 de un ejercicio para ver tu curva de carga y 1RM estimado." />
+          <Tip
+            title="Progreso"
+            body="Toca el icono 📈 de un ejercicio para ver tu curva de carga y 1RM estimado."
+          />
         </div>
 
         <button onClick={closeHelp} className="btn btn-ghost mt-6 w-full">
