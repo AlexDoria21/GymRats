@@ -56,7 +56,11 @@ export function ExerciseCard({ exercise: ex }: { exercise: Exercise }) {
 
       {/* action toolbar */}
       <div className="flex gap-2">
-        <button onClick={() => playVideo(ex.videoUrl)} className={ACTION} title="Ver guía en YouTube">
+        <button
+          onClick={() => playVideo(ex.videoUrl)}
+          className={ACTION}
+          title="Ver guía en YouTube"
+        >
           <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden>
             <polygon points="2,1 11,6 2,11" fill="var(--color-blaze)" />
           </svg>

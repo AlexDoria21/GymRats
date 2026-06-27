@@ -83,7 +83,9 @@ export function Header() {
         >
           <span
             className="inline-block h-[7px] w-[7px] rounded-full"
-            style={{ background: timer.timer.running ? 'var(--color-blaze)' : 'var(--color-faint)' }}
+            style={{
+              background: timer.timer.running ? 'var(--color-blaze)' : 'var(--color-faint)',
+            }}
           />
           {fmtTime(timer.timer.remaining)}
         </button>
