@@ -1,7 +1,6 @@
 import { produce } from 'immer';
 import { uid } from '../lib/id';
 import { loadData } from '../lib/storage';
-import { seed } from '../lib/seed';
 import { convertWeight } from '../lib/convert';
 import { cloneDay, cloneRoutine } from '../lib/clone';
 import { youtubeSearch } from '../lib/format';
@@ -38,6 +37,7 @@ export interface GymState {
   chartExId: string | null;
   confirm: ConfirmState | null;
   settingsOpen: boolean;
+  helpOpen: boolean;
 }
 
 export type Action =
@@ -72,13 +72,15 @@ export type Action =
   | { type: 'CANCEL_SESSION' }
   | { type: 'OPEN_SETTINGS' }
   | { type: 'CLOSE_SETTINGS' }
+  | { type: 'OPEN_HELP' }
+  | { type: 'CLOSE_HELP' }
   | { type: 'OPEN_CHART'; id: string }
   | { type: 'CLOSE_CHART' }
   | { type: 'SAVE_MODAL' };
 
 export function initState(): GymState {
   const data = loadData();
-  const routines = data && data.routines && data.routines.length ? data.routines : seed();
+  const routines = data?.routines ?? [];
   const unit: Unit = data?.unit ?? 'kg';
   return {
     routines,
@@ -93,6 +95,7 @@ export function initState(): GymState {
     chartExId: null,
     confirm: null,
     settingsOpen: false,
+    helpOpen: false,
   };
 }
 
@@ -366,6 +369,7 @@ export function reducer(state: GymState, action: Action): GymState {
         chartExId: null,
         confirm: null,
         settingsOpen: false,
+        helpOpen: false,
       };
     case 'START_SESSION':
       if (state.active) return state;
@@ -404,6 +408,10 @@ export function reducer(state: GymState, action: Action): GymState {
       return { ...state, settingsOpen: true };
     case 'CLOSE_SETTINGS':
       return { ...state, settingsOpen: false };
+    case 'OPEN_HELP':
+      return { ...state, helpOpen: true };
+    case 'CLOSE_HELP':
+      return { ...state, helpOpen: false };
     case 'SAVE_MODAL':
       return produce(state, (d) => applySaveModal(d));
     default:

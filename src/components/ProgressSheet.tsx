@@ -4,10 +4,15 @@ import { Dialog } from './Dialog';
 import { WeightChart } from './WeightChart';
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: 'up' | 'down' }) {
-  const color = accent === 'up' ? '#3d9bff' : accent === 'down' ? '#ff6b5e' : '#f3f3f4';
+  const color =
+    accent === 'up'
+      ? 'var(--color-blaze)'
+      : accent === 'down'
+        ? 'var(--color-danger)'
+        : 'var(--color-ink)';
   return (
-    <div className="flex-1 rounded-[12px] border border-[#26262b] bg-[#0d0d0f] px-3 py-2.5">
-      <div className="text-[9.5px] tracking-[0.06em] text-[#5f5f66] uppercase">{label}</div>
+    <div className="flex-1 rounded-[12px] border border-line bg-bg px-3 py-2.5">
+      <div className="eyebrow">{label}</div>
       <div className="mt-1 text-[17px] font-bold" style={{ color }}>
         {value}
       </div>
@@ -36,17 +41,15 @@ export function ProgressSheet() {
       z="z-[22]"
       backdrop="bg-black/65"
     >
-      <div className="w-full max-w-[480px] animate-[sheetUp_.24s_cubic-bezier(.2,.8,.2,1)] rounded-t-3xl border border-b-0 border-[#2a2a2e] bg-[#161618] px-[18px] pt-[14px] pb-6">
-        <div className="mx-auto mb-4 h-1 w-[38px] rounded-[3px] bg-[#2f2f35]" />
+      <div className="sheet px-[18px] pt-[14px] pb-6">
+        <div className="grabber" />
 
-        <div className="mb-0.5 text-[11px] tracking-[0.09em] text-[#82828a] uppercase">
-          Progreso de carga.
-        </div>
-        <div className="mb-4 truncate text-[18px] font-bold text-[#f3f3f4]">{ex.name}</div>
+        <div className="eyebrow mb-0.5">Progreso de carga</div>
+        <div className="display mb-4 truncate text-[22px] text-ink">{ex.name}</div>
 
         {stats.hasData ? (
           <>
-            <div className="rounded-[16px] border border-[#26262b] bg-[#0d0d0f] p-3">
+            <div className="rounded-[16px] border border-line bg-bg p-3">
               <WeightChart points={points} unit={unit} />
             </div>
 
@@ -67,32 +70,27 @@ export function ProgressSheet() {
               />
             </div>
 
-            <div className="mt-2.5 flex items-center justify-between rounded-[12px] border border-[#26262b] bg-[#0d0d0f] px-3.5 py-3">
+            <div className="mt-2.5 flex items-center justify-between rounded-[12px] border border-line bg-bg px-3.5 py-3">
               <div>
-                <div className="text-[9.5px] tracking-[0.06em] text-[#5f5f66] uppercase">
-                  1RM estimado · PR
-                </div>
-                <div className="mt-0.5 text-[12px] text-[#82828a]">
+                <div className="eyebrow">1RM estimado · PR</div>
+                <div className="mt-0.5 text-[12px] text-muted">
                   Fórmula Epley {reps ? `· ${reps} reps` : ''}
                 </div>
               </div>
-              <div className="text-right text-[18px] font-bold text-[#3d9bff]">
+              <div className="text-right text-[18px] font-bold text-blaze">
                 {orm ? `${orm} ${unit}` : '—'}
               </div>
             </div>
           </>
         ) : (
-          <div className="rounded-[16px] border border-[#26262b] bg-[#0d0d0f] px-6 py-10 text-center text-[14px] leading-relaxed text-[#5f5f66]">
+          <div className="rounded-[16px] border border-line bg-bg px-6 py-10 text-center text-[14px] leading-relaxed text-muted">
             Aún no registras cargas en este ejercicio.
             <br />
             Anota el peso de cada semana para ver tu progreso aquí.
           </div>
         )}
 
-        <button
-          onClick={closeChart}
-          className="mt-5 w-full cursor-pointer rounded-xl border border-[#2a2a2e] bg-transparent p-[13px] text-[15px] font-semibold text-[#b3b3ba]"
-        >
+        <button onClick={closeChart} className="btn btn-ghost mt-5 w-full">
           Cerrar
         </button>
       </div>

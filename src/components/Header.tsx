@@ -16,11 +16,11 @@ function SessionChip({ startedAt, onFinish }: { startedAt: number; onFinish: () 
       onClick={onFinish}
       aria-label="Finalizar rutina"
       title="Finalizar rutina"
-      className="flex flex-none items-center gap-1.5 rounded-[20px] border border-[#2b4a2f] bg-[#10210f] px-2.5 py-1.5 text-[13px] font-bold text-[#7ed08a] tabular-nums"
+      className="blaze-fill flex flex-none cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-bold text-[#2a0710] tabular-nums"
     >
-      <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#4cd964]" />
+      <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#2a0710]" />
       {fmtElapsed(elapsed)}
-      <span className="text-[11px] font-semibold opacity-80">Finalizar</span>
+      <span className="text-[11px] font-bold opacity-70">Finalizar</span>
     </button>
   );
 }
@@ -32,25 +32,28 @@ export function Header() {
     back,
     toggleUnit,
     openSettings,
+    openHelp,
     timer,
     startSession,
     requestFinishSession,
   } = useGym();
   const showChip = timer.timer && !timer.open;
+  const isHome = state.screen === 'home';
 
   return (
-    <div className="flex flex-none items-center gap-2.5 border-b border-[#1f1f23] bg-[#0d0d0f] px-4 pt-4 pb-[14px]">
-      {state.screen !== 'home' && (
+    <div className="flex flex-none items-center gap-2.5 border-b border-line bg-bg px-4 pt-4 pb-[14px]">
+      {!isHome && (
         <button
           onClick={back}
           aria-label="Atrás"
-          className="flex h-[38px] w-[38px] flex-none cursor-pointer items-center justify-center rounded-full border border-[#2a2a2e] bg-[#1a1a1d] pb-[3px] text-2xl leading-none text-[#e6e6ea]"
+          className="flex h-[38px] w-[38px] flex-none cursor-pointer items-center justify-center rounded-full border border-line-2 bg-surface-2 pb-[3px] text-2xl leading-none text-ink"
         >
           ‹
         </button>
       )}
       <div className="min-w-0 flex-1">
-        <div className="overflow-hidden text-[21px] font-bold tracking-[-0.015em] text-ellipsis whitespace-nowrap text-[#f3f3f4]">
+        {isHome && <div className="eyebrow mb-0.5">Gym Rats</div>}
+        <div className="display overflow-hidden text-[26px] text-ellipsis whitespace-nowrap text-ink">
           {title}
         </div>
       </div>
@@ -62,10 +65,10 @@ export function Header() {
           <button
             onClick={startSession}
             aria-label="Iniciar rutina"
-            className="flex flex-none cursor-pointer items-center gap-1.5 rounded-[20px] border border-[#2b4a2f] bg-[#10210f] px-3 py-1.5 text-[13px] font-bold text-[#7ed08a]"
+            className="flex flex-none cursor-pointer items-center gap-1.5 rounded-full border border-[#5a2436] bg-[#23121a] px-3 py-1.5 text-[13px] font-bold text-blaze"
           >
             <svg width="11" height="11" viewBox="0 0 12 12">
-              <polygon points="2,1 11,6 2,11" fill="#7ed08a" />
+              <polygon points="2,1 11,6 2,11" fill="currentColor" />
             </svg>
             Iniciar
           </button>
@@ -76,11 +79,13 @@ export function Header() {
         <button
           onClick={timer.restore}
           aria-label="Abrir temporizador de descanso"
-          className="flex flex-none items-center gap-1.5 rounded-[20px] border border-[#2a4a6a] bg-[#11243a] px-2.5 py-1.5 text-[13px] font-bold text-[#7fc0ff] tabular-nums"
+          className="flex flex-none items-center gap-1.5 rounded-full border border-line-2 bg-surface-2 px-2.5 py-1.5 text-[13px] font-bold text-ink tabular-nums"
         >
           <span
             className="inline-block h-[7px] w-[7px] rounded-full"
-            style={{ background: timer.timer.running ? '#3d9bff' : '#5f5f66' }}
+            style={{
+              background: timer.timer.running ? 'var(--color-blaze)' : 'var(--color-faint)',
+            }}
           />
           {fmtTime(timer.timer.remaining)}
         </button>
@@ -89,14 +94,21 @@ export function Header() {
       <button
         onClick={toggleUnit}
         aria-label="Cambiar unidad de peso"
-        className="flex-none cursor-pointer rounded-[20px] border border-[#2a2a2e] bg-[#1a1a1d] px-[13px] py-2 text-xs font-bold tracking-[0.04em] text-[#cfcfd4] uppercase"
+        className="flex-none cursor-pointer rounded-full border border-line-2 bg-surface-2 px-[13px] py-2 text-xs font-bold tracking-[0.06em] text-ink-2 uppercase"
       >
         {state.unit}
       </button>
       <button
+        onClick={openHelp}
+        aria-label="Cómo funciona"
+        className="flex h-[36px] w-[36px] flex-none cursor-pointer items-center justify-center rounded-full border border-line-2 bg-surface-2 text-[15px] font-bold text-ink-2"
+      >
+        ?
+      </button>
+      <button
         onClick={openSettings}
         aria-label="Datos y ajustes"
-        className="flex h-[36px] w-[36px] flex-none cursor-pointer items-center justify-center rounded-full border border-[#2a2a2e] bg-[#1a1a1d] text-[#cfcfd4]"
+        className="flex h-[36px] w-[36px] flex-none cursor-pointer items-center justify-center rounded-full border border-line-2 bg-surface-2 text-ink-2"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="12" cy="5" r="1.8" />

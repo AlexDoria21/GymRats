@@ -26,11 +26,11 @@ export function Fab() {
   return (
     <div
       className="flex-none px-4 pt-3 pb-4"
-      style={{ background: 'linear-gradient(to top,#0d0d0f 65%,rgba(13,13,15,0))' }}
+      style={{ background: 'linear-gradient(to top,var(--color-bg) 65%,transparent)' }}
     >
       <button
         onClick={onAdd}
-        className="w-full cursor-pointer rounded-[14px] bg-[#3d9bff] p-[15px] text-[15px] font-bold tracking-[0.01em] text-[#06121f]"
+        className="blaze-fill w-full cursor-pointer rounded-[14px] p-[15px] text-[15px] font-bold tracking-[0.01em] text-[#2a0710] active:scale-[0.99]"
       >
         {label}
       </button>

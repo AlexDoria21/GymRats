@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { buildBackup, parseBackup } from './backup';
-import { seed } from './seed';
+import { sampleRoutines } from '../test/fixtures';
 
 describe('backup', () => {
   it('round-trips build -> stringify -> parse', () => {
     const data = {
-      routines: seed(),
+      routines: sampleRoutines(),
       unit: 'kg' as const,
       sessions: [
         { id: 's1', routineId: 'r1', routineName: 'Rutina', startedAt: 1000, endedAt: 5000 },
